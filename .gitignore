@@ -1,0 +1,85 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Freezed generated files
+*.freezed.dart
+*.g.dart
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Web related
+/build/web/
+
+# Windows related
+/build/windows/
+
+# Linux related
+/build/linux/
+
+# macOS related
+/build/macos/
+
+# iOS related
+/build/ios/
+
+# Test coverage
+coverage/
+
+# LCOV
+*.lcov
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Firebase
+# Uncomment this line if you use Firebase in your project
+# /google-services.json
+# /GoogleService-Info.plist
+
+# Uncomment this line if you use Google Sign In
+# /lib/google_sign_in.dart
+
+*.env

@@ -1,0 +1,16 @@
+{
+  "id": "1",
+  "name": "Michael Jordan",
+  "email": "michaeljordan@gmail.com",
+  "avatar": "https://picsum.photos/seed/user123/200/200.jpg",
+  "studentId": "STU001234",
+  "major": "Computer Science",
+  "department": "Computer Science & Engineering",
+  "gpa": 3.85,
+  "level": 4,
+  "enrolledCourses": [],
+  "mode": "student",
+  "isOnboardingComplete": false,
+  "authToken": null,
+  "rememberMe": false
+}

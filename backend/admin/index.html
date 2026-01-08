@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Guide - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #002147;
+            --primary-light: #003A5D;
+            --accent: #FDC800;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--gray-50);
+            color: var(--gray-800);
+            line-height: 1.6;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+        .nav-menu {
+            flex: 1;
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            color: rgba(255,255,255,0.5);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-left: 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            margin-bottom: 4px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: var(--accent);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .nav-item i {
+            font-size: 20px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            padding: 10px 16px;
+            width: 300px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .search-box i {
+            color: var(--gray-400);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .btn-outline:hover {
+            background: var(--gray-50);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid var(--gray-100);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-icon.blue { background: rgba(99, 102, 241, 0.1); color: #6366F1; }
+        .stat-icon.green { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .stat-icon.yellow { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .stat-icon.purple { background: rgba(139, 92, 246, 0.1); color: #8B5CF6; }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .stat-label {
+            color: var(--gray-500);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .stat-change.positive {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        /* Tables */
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid var(--gray-100);
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 16px 24px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .table th {
+            background: var(--gray-50);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table tr:hover {
+            background: var(--gray-50);
+        }
+
+        .table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* User row */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--primary);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .user-email {
+            font-size: 13px;
+            color: var(--gray-500);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-student {
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366F1;
+        }
+
+        .badge-professor {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .badge-admin {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .badge-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .badge-inactive {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Action buttons */
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .action-btn.edit {
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366F1;
+        }
+
+        .action-btn.delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--gray-100);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            padding: 20px 24px;
+            border-top: 1px solid var(--gray-100);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--gray-700);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 33, 71, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            border: 1px solid var(--gray-200);
+            color: var(--gray-600);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: var(--accent);
+            border-color: var(--primary);
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--gray-500);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--gray-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 2000;
+        }
+
+        .toast {
+            background: var(--gray-900);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-top: 1px solid var(--gray-100);
+        }
+
+        .pagination-info {
+            color: var(--gray-500);
+            font-size: 14px;
+        }
+
+        .pagination-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .page-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover {
+            background: var(--gray-50);
+        }
+
+        .page-btn.active {
+            background: var(--primary);
+            color: var(--accent);
+            border-color: var(--primary);
+        }
+
+        /* Login */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-logo .logo-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 16px;
+            font-size: 24px;
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: var(--gray-500);
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        /* Hidden pages */
+        .page { display: none; }
+        .page.active { display: block; }
+    </style>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="logo-icon">CG</div>
+                <h1 class="login-title">Admin Panel</h1>
+                <p class="login-subtitle">College Guide Management System</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="loginEmail" class="form-input" placeholder="admin@college.edu" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 16px;">
+                    <i class="ri-login-box-line"></i> Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="app-container" style="display: none;">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">CG</div>
+                <div class="logo-text">College<span>Guide</span></div>
+            </div>
+            
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">Overview</div>
+                    <a class="nav-item active" data-page="dashboard">
+                        <i class="ri-dashboard-line"></i> Dashboard
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Management</div>
+                    <a class="nav-item" data-page="users">
+                        <i class="ri-user-line"></i> Users
+                    </a>
+                    <a class="nav-item" data-page="professors">
+                        <i class="ri-graduation-cap-line"></i> Professors
+                    </a>
+                    <a class="nav-item" data-page="courses">
+                        <i class="ri-book-line"></i> Courses
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">System</div>
+                    <a class="nav-item" data-page="announcements">
+                        <i class="ri-megaphone-line"></i> Announcements
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="nav-item" id="logoutBtn" style="margin-top: auto;">
+                <i class="ri-logout-box-line"></i> Logout
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <div id="dashboardPage" class="page active">
+                <div class="header">
+                    <h1 class="page-title">Dashboard</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-outline" onclick="loadStats()">
+                            <i class="ri-refresh-line"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Stats will be loaded here -->
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Recent Users</h2>
+                        <button class="btn btn-outline" onclick="showPage('users')">View All</button>
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentUsersTable">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Users Page -->
+            <div id="usersPage" class="page">
+                <div class="header">
+                    <h1 class="page-title">Users</h1>
+                    <div class="header-actions">
+                        <div class="search-box">
+                            <i class="ri-search-line"></i>
+                            <input type="text" id="userSearch" placeholder="Search users..." onkeyup="searchUsers()">
+                        </div>
+                        <button class="btn btn-primary" onclick="showUserModal()">
+                            <i class="ri-add-line"></i> Add User
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" data-role="all">All Users</div>
+                    <div class="tab" data-role="STUDENT">Students</div>
+                    <div class="tab" data-role="PROFESSOR">Professors</div>
+                    <div class="tab" data-role="ADMIN">Admins</div>
+                </div>
+
+                <div class="card">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Department</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="usersPagination">
+                        <!-- Pagination will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Professors Page -->
+            <div id="professorsPage" class="page">
+                <div class="header">
+                    <h1 class="page-title">Professors</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="showUserModal('PROFESSOR')">
+                            <i class="ri-add-line"></i> Add Professor
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Professor</th>
+                                <th>Department</th>
+                                <th>Courses</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="professorsTable">
+                            <!-- Professors will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Courses Page -->
+            <div id="coursesPage" class="page">
+                <div class="header">
+                    <h1 class="page-title">Courses</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="showCourseModal()">
+                            <i class="ri-add-line"></i> Add Course
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Category</th>
+                                <th>Instructor</th>
+                                <th>Students</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coursesTable">
+                            <!-- Courses will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Announcements Page -->
+            <div id="announcementsPage" class="page">
+                <div class="header">
+                    <h1 class="page-title">Announcements</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="showAnnouncementModal()">
+                            <i class="ri-add-line"></i> New Announcement
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div id="announcementsList" style="padding: 24px;">
+                        <!-- Announcements will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal-overlay" id="userModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="userModalTitle">Add User</h3>
+                <button class="modal-close" onclick="closeModal('userModal')">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="userId">
+                    <div class="form-group">
+                        <label class="form-label">Name</label>
+                        <input type="text" id="userName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="userEmail" class="form-input" required>
+                    </div>
+                    <div class="form-group" id="passwordGroup">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="userPassword" class="form-input" minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select id="userRole" class="form-select">
+                            <option value="STUDENT">Student</option>
+                            <option value="PROFESSOR">Professor</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <input type="text" id="userDepartment" class="form-input">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('userModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveUser()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Modal -->
+    <div class="modal-overlay" id="courseModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Course</h3>
+                <button class="modal-close" onclick="closeModal('courseModal')">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="courseForm">
+                    <input type="hidden" id="courseId">
+                    <div class="form-group">
+                        <label class="form-label">Course Code</label>
+                        <input type="text" id="courseCode" class="form-input" placeholder="CS101" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Course Name</label>
+                        <input type="text" id="courseName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <select id="courseCategory" class="form-select">
+                            <option value="COMP">Computer Science</option>
+                            <option value="MATH">Mathematics</option>
+                            <option value="PHYS">Physics</option>
+                            <option value="CHEM">Chemistry</option>
+                            <option value="ENG">Engineering</option>
+                            <option value="GENERAL">General</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Credit Hours</label>
+                        <input type="number" id="courseCreditHours" class="form-input" value="3" min="1" max="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea id="courseDescription" class="form-input" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('courseModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCourse()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Instructor Modal -->
+    <div class="modal-overlay" id="assignModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Assign Instructor</h3>
+                <button class="modal-close" onclick="closeModal('assignModal')">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="assignCourseId">
+                <div class="form-group">
+                    <label class="form-label">Select Professor</label>
+                    <select id="assignProfessor" class="form-select">
+                        <!-- Professors will be loaded here -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="assignPrimary"> Primary Instructor
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('assignModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="assignInstructor()">Assign</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE = 'http://localhost:3000/api';
+        let authToken = localStorage.getItem('adminToken');
+
+        // Check auth on load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (authToken) {
+                showApp();
+            }
+        });
+
+        // API Helper
+        async function api(endpoint, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    ...options,
+                    headers: { ...headers, ...options.headers }
+                });
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error?.message || 'Request failed');
+                }
+                
+                return data;
+            } catch (error) {
+                showToast(error.message, 'error');
+                throw error;
+            }
+        }
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const data = await api('/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (data.user.role !== 'admin' && data.user.role !== 'ADMIN') {
+                    showToast('Admin access required', 'error');
+                    return;
+                }
+
+                authToken = data.token;
+                localStorage.setItem('adminToken', authToken);
+                showApp();
+                showToast('Welcome back!', 'success');
+            } catch (error) {
+                // Error handled by api function
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('adminToken');
+            authToken = null;
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('loginPage').style.display = 'flex';
+        });
+
+        // Show App
+        function showApp() {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+            loadStats();
+            loadRecentUsers();
+        }
+
+        // Navigation
+        document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+            item.addEventListener('click', () => {
+                const page = item.dataset.page;
+                showPage(page);
+            });
+        });
+
+        function showPage(page) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+            
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`${page}Page`).classList.add('active');
+
+            // Load page data
+            switch(page) {
+                case 'dashboard': loadStats(); loadRecentUsers(); break;
+                case 'users': loadUsers(); break;
+                case 'professors': loadProfessors(); break;
+                case 'courses': loadCourses(); break;
+            }
+        }
+
+        // Load Stats
+        async function loadStats() {
+            try {
+                const data = await api('/admin/stats');
+                const stats = data.stats;
+
+                document.getElementById('statsGrid').innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon blue"><i class="ri-user-line"></i></div>
+                            <span class="stat-change positive">+${stats.users.recentSignups} this week</span>
+                        </div>
+                        <div class="stat-value">${stats.users.total}</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon green"><i class="ri-graduation-cap-line"></i></div>
+                        </div>
+                        <div class="stat-value">${stats.users.professors}</div>
+                        <div class="stat-label">Professors</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon yellow"><i class="ri-book-line"></i></div>
+                        </div>
+                        <div class="stat-value">${stats.courses.total}</div>
+                        <div class="stat-label">Active Courses</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon purple"><i class="ri-user-follow-line"></i></div>
+                        </div>
+                        <div class="stat-value">${stats.courses.totalEnrollments}</div>
+                        <div class="stat-label">Enrollments</div>
+                    </div>
+                `;
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        // Load Recent Users
+        async function loadRecentUsers() {
+            try {
+                const data = await api('/admin/users?limit=5&sortBy=createdAt&sortOrder=desc');
+                const users = data.users;
+
+                document.getElementById('recentUsersTable').innerHTML = users.map(user => `
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar">${user.name.charAt(0)}</div>
+                                <div>
+                                    <div class="user-name">${user.name}</div>
+                                    <div class="user-email">${user.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-${user.role.toLowerCase()}">${user.role}</span></td>
+                        <td><span class="badge ${user.isActive ? 'badge-active' : 'badge-inactive'}">${user.isActive ? 'Active' : 'Inactive'}</span></td>
+                        <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        // Load Users
+        let currentRole = 'all';
+        let currentPage = 1;
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentRole = tab.dataset.role;
+                currentPage = 1;
+                loadUsers();
+            });
+        });
+
+        async function loadUsers() {
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: 10,
+                    ...(currentRole !== 'all' && { role: currentRole })
+                });
+
+                const data = await api(`/admin/users?${params}`);
+                renderUsersTable(data.users);
+                renderPagination(data.pagination);
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        function renderUsersTable(users) {
+            document.getElementById('usersTable').innerHTML = users.map(user => `
+                <tr>
+                    <td>
+                        <div class="user-info">
+                            <div class="user-avatar">${user.name.charAt(0)}</div>
+                            <div>
+                                <div class="user-name">${user.name}</div>
+                                <div class="user-email">${user.email}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-${user.role.toLowerCase()}">${user.role}</span></td>
+                    <td>${user.department || '-'}</td>
+                    <td><span class="badge ${user.isActive ? 'badge-active' : 'badge-inactive'}">${user.isActive ? 'Active' : 'Inactive'}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="action-btn edit" onclick="editUser('${user.id}')">
+                                <i class="ri-edit-line"></i>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteUser('${user.id}', '${user.name}')">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPagination(pagination) {
+            const { page, pages, total } = pagination;
+            const start = (page - 1) * 10 + 1;
+            const end = Math.min(page * 10, total);
+
+            document.getElementById('usersPagination').innerHTML = `
+                <div class="pagination-info">Showing ${start}-${end} of ${total}</div>
+                <div class="pagination-btns">
+                    <button class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="goToPage(${page - 1})">
+                        <i class="ri-arrow-left-s-line"></i>
+                    </button>
+                    ${Array.from({length: pages}, (_, i) => i + 1).slice(Math.max(0, page - 3), page + 2).map(p => `
+                        <button class="page-btn ${p === page ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>
+                    `).join('')}
+                    <button class="page-btn" ${page >= pages ? 'disabled' : ''} onclick="goToPage(${page + 1})">
+                        <i class="ri-arrow-right-s-line"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadUsers();
+        }
+
+        function searchUsers() {
+            // Implement search debounce
+            clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(loadUsers, 300);
+        }
+
+        // User Modal
+        function showUserModal(defaultRole = 'STUDENT') {
+            document.getElementById('userId').value = '';
+            document.getElementById('userName').value = '';
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userRole').value = defaultRole;
+            document.getElementById('userDepartment').value = '';
+            document.getElementById('userModalTitle').textContent = 'Add User';
+            document.getElementById('passwordGroup').style.display = 'block';
+            document.getElementById('userModal').classList.add('active');
+        }
+
+        async function editUser(id) {
+            try {
+                const data = await api(`/admin/users/${id}`);
+                const user = data.user;
+                
+                document.getElementById('userId').value = user.id;
+                document.getElementById('userName').value = user.name;
+                document.getElementById('userEmail').value = user.email;
+                document.getElementById('userRole').value = user.role;
+                document.getElementById('userDepartment').value = user.department || '';
+                document.getElementById('userModalTitle').textContent = 'Edit User';
+                document.getElementById('passwordGroup').style.display = 'none';
+                document.getElementById('userModal').classList.add('active');
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        async function saveUser() {
+            const id = document.getElementById('userId').value;
+            const userData = {
+                name: document.getElementById('userName').value,
+                email: document.getElementById('userEmail').value,
+                role: document.getElementById('userRole').value,
+                department: document.getElementById('userDepartment').value
+            };
+
+            if (!id) {
+                userData.password = document.getElementById('userPassword').value;
+            }
+
+            try {
+                if (id) {
+                    await api(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(userData) });
+                } else {
+                    await api('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
+                }
+                closeModal('userModal');
+                loadUsers();
+                showToast('User saved successfully', 'success');
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        async function deleteUser(id, name) {
+            if (!confirm(`Delete user "${name}"? This action cannot be undone.`)) return;
+
+            try {
+                await api(`/admin/users/${id}`, { method: 'DELETE' });
+                loadUsers();
+                showToast('User deleted', 'success');
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        // Load Professors
+        async function loadProfessors() {
+            try {
+                const data = await api('/admin/professors');
+                document.getElementById('professorsTable').innerHTML = data.professors.map(prof => `
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar">${prof.name.charAt(0)}</div>
+                                <div>
+                                    <div class="user-name">${prof.name}</div>
+                                    <div class="user-email">${prof.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${prof.department || '-'}</td>
+                        <td>${prof.courseCount} courses</td>
+                        <td><span class="badge badge-active">Active</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="action-btn edit" onclick="editUser('${prof.id}')">
+                                    <i class="ri-edit-line"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        // Load Courses
+        async function loadCourses() {
+            try {
+                const data = await api('/admin/courses');
+                document.getElementById('coursesTable').innerHTML = data.courses.map(course => `
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar" style="background: var(--primary); color: var(--accent);">${course.code.substring(0, 2)}</div>
+                                <div>
+                                    <div class="user-name">${course.code}</div>
+                                    <div class="user-email">${course.name}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${course.category}</td>
+                        <td>${course.instructors.map(i => i.name).join(', ') || '<em>Not assigned</em>'}</td>
+                        <td>${course.stats.enrollments} students</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="action-btn edit" onclick="showAssignModal('${course.id}')" title="Assign Instructor">
+                                    <i class="ri-user-add-line"></i>
+                                </button>
+                                <button class="action-btn delete" onclick="deleteCourse('${course.id}', '${course.code}')">
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        // Course Modal
+        function showCourseModal() {
+            document.getElementById('courseId').value = '';
+            document.getElementById('courseCode').value = '';
+            document.getElementById('courseName').value = '';
+            document.getElementById('courseCategory').value = 'COMP';
+            document.getElementById('courseCreditHours').value = '3';
+            document.getElementById('courseDescription').value = '';
+            document.getElementById('courseModal').classList.add('active');
+        }
+
+        async function saveCourse() {
+            const courseData = {
+                code: document.getElementById('courseCode').value,
+                name: document.getElementById('courseName').value,
+                category: document.getElementById('courseCategory').value,
+                creditHours: parseInt(document.getElementById('courseCreditHours').value),
+                description: document.getElementById('courseDescription').value
+            };
+
+            try {
+                await api('/admin/courses', { method: 'POST', body: JSON.stringify(courseData) });
+                closeModal('courseModal');
+                loadCourses();
+                showToast('Course created successfully', 'success');
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        async function deleteCourse(id, code) {
+            if (!confirm(`Delete course "${code}"? This will remove all enrollments.`)) return;
+
+            try {
+                await api(`/admin/courses/${id}`, { method: 'DELETE' });
+                loadCourses();
+                showToast('Course deleted', 'success');
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        // Assign Instructor Modal
+        async function showAssignModal(courseId) {
+            document.getElementById('assignCourseId').value = courseId;
+            
+            try {
+                const data = await api('/admin/professors');
+                document.getElementById('assignProfessor').innerHTML = data.professors.map(p => 
+                    `<option value="${p.id}">${p.name} (${p.email})</option>`
+                ).join('');
+                document.getElementById('assignModal').classList.add('active');
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        async function assignInstructor() {
+            const courseId = document.getElementById('assignCourseId').value;
+            const userId = document.getElementById('assignProfessor').value;
+            const isPrimary = document.getElementById('assignPrimary').checked;
+
+            try {
+                await api(`/admin/courses/${courseId}/instructors`, {
+                    method: 'POST',
+                    body: JSON.stringify({ userId, isPrimary })
+                });
+                closeModal('assignModal');
+                loadCourses();
+                showToast('Instructor assigned successfully', 'success');
+            } catch (error) {
+                // Error handled
+            }
+        }
+
+        // Modal helpers
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // Toast
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class="ri-${type === 'success' ? 'check' : 'error-warning'}-line"></i> ${message}`;
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
