@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/course_provider.dart';
 import '../models/course.dart';
+import '../models/task.dart';
+import 'assignment_detail_screen.dart';
 
 class CourseDetailScreen extends ConsumerStatefulWidget {
   final String courseId;
@@ -593,198 +595,27 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           child: InkWell(
             onTap: () {
-              // Convert Assignment to Task for compatibility
-              // In a real app, you might fetch the full task or have a unified model
-              // For now, we creating a temporary Task object to view details
-              /*
-              final task = Task(
-                id: a.id,
-                title: a.title,
-                description: a.description,
-                dueDate: a.dueDate,
-                status: a.isSubmitted ? TaskStatus.completed : TaskStatus.pending,
-                taskType: TaskType.assignment,
-                priority: TaskPriority.medium,
-                subject: course.name,
-                courseId: course.id,
-                maxPoints: a.maxScore,
-              );
-              
               Navigator.push(
-                context, 
-                MaterialPageRoute(builder: (_) => TaskDetailsPage(task: task))
-              );
-              */
-              // Since we don't have easy access to Task model imports without potentially breaking things
-              // let's show a simple bottom sheet with details for now, or use the router if setup
-              
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                builder: (context) => Container(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(Icons.assignment, color: Colors.orange),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  a.title,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${a.maxScore} points',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Description',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        a.description,
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      if (a.attachments.isNotEmpty) ...[
-                        const Text(
-                          'Attachments',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        ...a.attachments.map((url) => InkWell(
-                              onTap: () async {
-                                final uri = Uri.parse(url);
-                                if (await canLaunchUrl(uri)) {
-                                  await launchUrl(uri);
-                                }
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.attach_file,
-                                        color: Colors.blue),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        url.split('/').last,
-                                        style: const TextStyle(
-                                          color: Colors.blue,
-                                          decoration: TextDecoration.underline,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )),
-                        const SizedBox(height: 24),
-                      ],
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_today,
-                              size: 18, color: Colors.grey),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Due: ${_formatDate(a.dueDate)}',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const Spacer(),
-                          if (a.isSubmitted)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text(
-                                'Submitted',
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            context.pop();
-                            // Navigate to submission screen if needed in future
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2E6AFF),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text('Close'),
-                        ),
-                      ),
-                    ],
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AssignmentDetailScreen(
+                    task: Task(
+                      id: a.id,
+                      title: a.title,
+                      subject: course.name,
+                      dueDate: a.dueDate,
+                      status: a.isSubmitted ? TaskStatus.submitted : TaskStatus.pending,
+                      priority: TaskPriority.medium,
+                      description: a.description,
+                      createdAt: DateTime.now(),
+                      taskType: TaskType.assignment,
+                      attachments: a.attachments,
+                    ),
                   ),
                 ),
               );
             },
+
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'AddTask.dart';
 import 'Taskdetails.dart';
+import '../assignment_detail_screen.dart';
 import '../../providers/task_provider.dart';
 import '../../models/task.dart';
 
@@ -323,11 +324,42 @@ class _TaskCard extends StatelessWidget {
           scale: 1.2,
           child: Checkbox(
             value: isCompleted,
-            onChanged: (_) => onToggle(),
+            onChanged: (val) {
+              if (val == true && 
+                  task.taskType == TaskType.assignment && 
+                  task.status != TaskStatus.submitted && 
+                  task.status != TaskStatus.completed) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please submit your assignment before marking it as complete.'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+              onToggle();
+            },
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             activeColor: const Color(0xFF10B981),
           ),
         ),
+        onTap: () {
+          if (task.taskType == TaskType.assignment) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AssignmentDetailScreen(task: task)),
+            );
+          } else {
+            if (isPersonal && onEdit != null) {
+              onEdit!();
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TaskDetailsPage(task: task)),
+              );
+            }
+          }
+        },
         title: Text(
           task.title,
           style: TextStyle(

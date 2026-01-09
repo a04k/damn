@@ -1,6 +1,6 @@
 enum TaskPriority { high, medium, low }
 
-enum TaskStatus { pending, completed }
+enum TaskStatus { pending, completed, submitted }
 
 enum TaskType { assignment, exam, lab, personal }
 
@@ -15,6 +15,8 @@ class Task {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final TaskType taskType;
+  final List<String> attachments;
+  final Map<String, dynamic>? submission;
 
   Task({
     required this.id,
@@ -27,6 +29,8 @@ class Task {
     required this.createdAt,
     this.updatedAt,
     this.taskType = TaskType.personal,
+    this.attachments = const [],
+    this.submission,
   });
 
   Task copyWith({
@@ -40,6 +44,8 @@ class Task {
     DateTime? createdAt,
     DateTime? updatedAt,
     TaskType? taskType,
+    List<String>? attachments,
+    Map<String, dynamic>? submission,
   }) {
     return Task(
       id: id ?? this.id,
@@ -52,6 +58,8 @@ class Task {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       taskType: taskType ?? this.taskType,
+      attachments: attachments ?? this.attachments,
+      submission: submission ?? this.submission,
     );
   }
 
@@ -67,6 +75,8 @@ class Task {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'taskType': taskType.name.toUpperCase(),
+      'attachments': attachments,
+      'submission': submission,
     };
   }
 
@@ -87,7 +97,14 @@ class Task {
 
     // Parse status
     final statusStr = (json['status'] ?? 'PENDING').toString().toUpperCase();
-    final status = statusStr == 'COMPLETED' ? TaskStatus.completed : TaskStatus.pending;
+    TaskStatus status;
+    if (statusStr == 'COMPLETED') {
+      status = TaskStatus.completed;
+    } else if (statusStr == 'SUBMITTED') {
+      status = TaskStatus.submitted;
+    } else {
+      status = TaskStatus.pending;
+    }
 
     // Parse type
     TaskType taskType;
@@ -105,6 +122,14 @@ class Task {
         taskType = TaskType.personal;
     }
 
+    // Parse attachments (handle potential dynamic/list structure)
+    List<String> attachments = [];
+    if (json['attachments'] != null) {
+      if (json['attachments'] is List) {
+        attachments = (json['attachments'] as List).map((e) => e.toString()).toList();
+      }
+    }
+
     return Task(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
@@ -120,6 +145,8 @@ class Task {
           ? DateTime.tryParse(json['updatedAt'].toString()) 
           : null,
       taskType: taskType,
+      attachments: attachments,
+      submission: json['submission'] as Map<String, dynamic>?,
     );
   }
 }

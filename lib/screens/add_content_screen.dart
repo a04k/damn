@@ -183,6 +183,41 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
     }
   }
 
+  Future<void> _addLink() async {
+    final controller = TextEditingController();
+    final link = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Link'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'https://example.com',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              if (controller.text.isNotEmpty) {
+                Navigator.pop(context, controller.text.trim());
+              }
+            }, 
+            child: const Text('Add')
+          ),
+        ],
+      ),
+    );
+    
+    if (link != null && link.isNotEmpty) {
+      setState(() {
+        _uploadedFiles.add(link.startsWith('http') ? link : 'https://$link');
+      });
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCourseId == null) {
@@ -598,23 +633,42 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
               }).toList(),
             ),
           
-          Align(
-            alignment: Alignment.centerLeft,
-            child: ElevatedButton.icon(
-              onPressed: _isUploading ? null : _pickAndUploadFile,
-              icon: _isUploading 
-                  ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)) 
-                  : const Icon(Icons.add, size: 16),
-              label: Text(_isUploading ? "Uploading..." : "Attach File", style: const TextStyle(fontSize: 12)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                elevation: 0,
-                side: const BorderSide(color: Color(0xFFD1D5DB)),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isUploading ? null : _pickAndUploadFile,
+                  icon: _isUploading 
+                      ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)) 
+                      : const Icon(Icons.attach_file, size: 16),
+                  label: Text(_isUploading ? "Uploading..." : "Attach File", style: const TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    side: const BorderSide(color: Color(0xFFD1D5DB)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _addLink,
+                  icon: const Icon(Icons.link, size: 16),
+                  label: const Text("Add Link", style: TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    side: const BorderSide(color: Color(0xFFD1D5DB)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            ],
           ),
 
           // Points and Date (for assignment/exam only)

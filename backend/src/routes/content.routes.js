@@ -214,6 +214,7 @@ router.post('/exam',
     body('description').optional().isString(),
     body('examDate').isISO8601(),
     body('points').optional().isInt({ min: 0 }).default(100),
+    body('attachments').optional().isArray(),
     validate
   ],
   async (req, res, next) => {
@@ -248,6 +249,7 @@ router.post('/exam',
           priority: 'HIGH',
           dueDate: new Date(examDate),
           maxPoints: points,
+          attachments,
           courseId,
           createdById: req.user.id
         }

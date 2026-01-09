@@ -49,15 +49,18 @@ router.post('/', authenticate, upload.single('file'), async (req, res) => {
     let key;
     const type = req.query.type;
 
+    const ext = req.file.originalname.split('.').pop();
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    const cleanName = req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
+
     if (type === 'profile') {
-      // Profile picture: profilepictures/{userId}-{timestamp}.ext
-      const ext = req.file.originalname.split('.').pop() || 'jpg';
-      key = `profilepictures/${req.user.id}-${Date.now()}.${ext}`;
+      key = `profile-pictures/${req.user.id}/${uniqueSuffix}.${ext}`;
+    } else if (type === 'submission') {
+        key = `submissions/${req.user.id}/${uniqueSuffix}-${cleanName}`;
+    } else if (type === 'content' || type === 'lecture' || type === 'attachment') {
+        key = `course-content/${uniqueSuffix}-${cleanName}`;
     } else {
-      // General upload: uploads/{timestamp}-{cleanName}
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const cleanName = req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
-      key = `uploads/${uniqueSuffix}-${cleanName}`;
+        key = `uploads/${uniqueSuffix}-${cleanName}`;
     }
 
     // Upload to R2

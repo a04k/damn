@@ -51,6 +51,10 @@ router.get('/',
           },
           createdBy: {
             select: { name: true }
+          },
+          submissions: {
+            where: { studentId: req.user.id },
+            select: { status: true, fileUrl: true, submittedAt: true }
           }
         },
         orderBy: [
@@ -67,7 +71,8 @@ router.get('/',
           description: t.description,
           type: t.taskType,
           priority: t.priority,
-          status: t.status,
+          // If user has a submission, use that status. Otherwise use task status (or PENDING if null)
+          status: t.submissions?.[0]?.status || t.status || 'PENDING',
           dueDate: t.dueDate,
           maxPoints: t.maxPoints,
           attachments: t.attachments,
@@ -78,7 +83,8 @@ router.get('/',
           } : null,
           createdBy: t.createdBy.name,
           createdAt: t.createdAt,
-          completedAt: t.completedAt
+          completedAt: t.completedAt,
+          submission: t.submissions?.[0] || null
         }))
       });
     } catch (error) {
@@ -154,6 +160,9 @@ router.get('/:id',
           },
           createdBy: {
             select: { name: true, email: true }
+          },
+          submissions: {
+            where: { studentId: req.user.id }
           },
 
         }
@@ -282,11 +291,21 @@ router.post('/:id/complete',
       const { id } = req.params;
 
       const task = await prisma.task.findUnique({
-        where: { id }
+        where: { id },
+        include: {
+          submissions: {
+            where: { studentId: req.user.id }
+          }
+        }
       });
 
       if (!task) {
         throw new ApiError(404, 'Task not found');
+      }
+
+      // Check if assignment needs submission
+      if (task.taskType === 'ASSIGNMENT' && (!task.submissions || task.submissions.length === 0)) {
+        throw new ApiError(400, 'Assignments must be submitted before marking as complete');
       }
 
       const updated = await prisma.task.update({
@@ -300,6 +319,109 @@ router.post('/:id/complete',
       res.json({
         success: true,
         task: updated
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ============ SUBMIT ASSIGNMENT ============
+
+router.post('/:id/submit',
+  authenticate,
+  [
+    body('fileUrl').optional().isURL(),
+    body('notes').optional().isString(),
+    validate
+  ],
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { fileUrl, notes } = req.body;
+
+      const task = await prisma.task.findUnique({
+        where: { id }
+      });
+
+      if (!task) {
+        throw new ApiError(404, 'Task not found');
+      }
+
+      // Create or update submission
+      const submission = await prisma.taskSubmission.upsert({
+        where: {
+          taskId_studentId: {
+            taskId: id,
+            studentId: req.user.id
+          }
+        },
+        update: {
+          fileUrl,
+          notes,
+          status: 'SUBMITTED',
+          submittedAt: new Date()
+        },
+        create: {
+          taskId: id,
+          studentId: req.user.id,
+          fileUrl,
+          notes,
+          status: 'SUBMITTED',
+          submittedAt: new Date()
+        }
+      });
+
+      logger.info(`✅ Assignment submitted: ${req.user.email} -> ${task.title}`);
+
+      res.json({
+        success: true,
+        submission
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ============ UNSUBMIT ASSIGNMENT ============
+
+router.post('/:id/unsubmit',
+  authenticate,
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+
+      // Check if submission exists
+      const submission = await prisma.taskSubmission.findUnique({
+        where: {
+          taskId_studentId: {
+            taskId: id,
+            studentId: req.user.id
+          }
+        }
+      });
+
+      if (!submission) {
+        throw new ApiError(404, 'No submission found for this task');
+      }
+
+      // Delete submission
+      await prisma.taskSubmission.delete({
+        where: {
+          id: submission.id
+        }
+      });
+
+      // If the task was marked as completed, we might want to reset it?
+      // For now, let's just delete the submission. 
+      // The status will fall back to the task's status (PENDING).
+
+      logger.info(`✅ Assignment unsubmitted: ${req.user.email} -> Task ID ${id}`);
+
+      res.json({
+        success: true,
+        message: 'Submission removed'
       });
     } catch (error) {
       next(error);

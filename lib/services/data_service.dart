@@ -317,6 +317,25 @@ class DataService {
       return [];
     }
   }
+
+  /// Get single task by ID
+  static Future<Task?> getTask(String id) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/tasks/$id'),
+        headers: ApiConfig.authHeaders,
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return _parseTask(data['task']);
+      }
+      return null;
+    } catch (e) {
+      print('[DataService] Get task error: $e');
+      return null;
+    }
+  }
   
   /// Create a personal task
   static Future<Task?> createTask({
@@ -403,6 +422,42 @@ class DataService {
       return response.statusCode == 200;
     } catch (e) {
       print('[DataService] Delete task error: $e');
+      return false;
+    }
+  }
+
+  /// Submit task (assignment)
+  static Future<bool> submitTask({
+    required String taskId,
+    String? fileUrl,
+    String? notes,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/submit'),
+        headers: ApiConfig.authHeaders,
+        body: jsonEncode({
+          'fileUrl': fileUrl,
+          'notes': notes,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('[DataService] Submit task error: $e');
+      return false;
+    }
+  }
+
+  /// Unsubmit task (assignment)
+  static Future<bool> unsubmitTask(String taskId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/unsubmit'),
+        headers: ApiConfig.authHeaders,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('[DataService] Unsubmit task error: $e');
       return false;
     }
   }
