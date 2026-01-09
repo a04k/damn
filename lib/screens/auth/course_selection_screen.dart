@@ -393,8 +393,7 @@ class _SelectCoursePageState extends ConsumerState<SelectCoursePage> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Selected: ${selectedCourseIds.length} courses' +
-                                (_selectedLevel != null ? ' (Filtered by Level $_selectedLevel)' : ''),
+                                'Selected: ${selectedCourseIds.length} courses${_selectedLevel != null ? ' (Filtered by Level $_selectedLevel)' : ''}',
                                 style: const TextStyle(color: Colors.grey),
                               ),
                               const SizedBox(height: 16),
@@ -473,7 +472,7 @@ class _SelectCoursePageState extends ConsumerState<SelectCoursePage> {
     bool enabled = true,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         filled: true,

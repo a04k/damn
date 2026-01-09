@@ -16,6 +16,7 @@ class Course {
   final List<Exam> exams;
   final EnrollmentStatus enrollmentStatus;
   final Map<String, dynamic>? stats;
+  final bool isPrimary; // View-specific field for professors
 
   Course({
     required this.id,
@@ -31,6 +32,7 @@ class Course {
     required this.exams,
     this.enrollmentStatus = EnrollmentStatus.available,
     this.stats,
+    this.isPrimary = false,
   });
 
   Course copyWith({
@@ -46,6 +48,7 @@ class Course {
     List<Assignment>? assignments,
     List<Exam>? exams,
     EnrollmentStatus? enrollmentStatus,
+    bool? isPrimary,
   }) {
     return Course(
       id: id ?? this.id,
@@ -60,6 +63,7 @@ class Course {
       assignments: assignments ?? this.assignments,
       exams: exams ?? this.exams,
       enrollmentStatus: enrollmentStatus ?? this.enrollmentStatus,
+      isPrimary: isPrimary ?? this.isPrimary,
     );
   }
 
@@ -78,6 +82,7 @@ class Course {
       'exams': exams.map((e) => e.toJson()).toList(),
       'enrollmentStatus': enrollmentStatus.name,
       'stats': stats,
+      'isPrimary': isPrimary,
     };
   }
 
@@ -153,6 +158,7 @@ class Course {
               orElse: () => EnrollmentStatus.available)
           : EnrollmentStatus.available,
       stats: json['stats'],
+      isPrimary: json['isPrimary'] == true,
     );
   }
 }
@@ -212,11 +218,13 @@ class CourseContent {
   final int week;
   final String topic;
   final String description;
+  final List<String> attachments;
 
   CourseContent({
     required this.week,
     required this.topic,
     required this.description,
+    this.attachments = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -224,6 +232,7 @@ class CourseContent {
       'week': week,
       'topic': topic,
       'description': description,
+      'attachments': attachments,
     };
   }
 
@@ -232,6 +241,10 @@ class CourseContent {
       week: json['week'] is int ? json['week'] : int.tryParse(json['week']?.toString() ?? '0') ?? 0,
       topic: json['topic']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
+      attachments: (json['attachments'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
     );
   }
 }
@@ -243,6 +256,7 @@ class Assignment {
   final int maxScore;
   final String description;
   final bool isSubmitted;
+  final List<String> attachments;
 
   Assignment({
     required this.id,
@@ -251,6 +265,7 @@ class Assignment {
     required this.maxScore,
     required this.description,
     this.isSubmitted = false,
+    this.attachments = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -261,6 +276,7 @@ class Assignment {
       'maxScore': maxScore,
       'description': description,
       'isSubmitted': isSubmitted,
+      'attachments': attachments,
     };
   }
 
@@ -272,6 +288,10 @@ class Assignment {
       maxScore: json['maxScore'] is int ? json['maxScore'] : int.tryParse(json['maxScore']?.toString() ?? '100') ?? 100,
       description: json['description']?.toString() ?? '',
       isSubmitted: json['isSubmitted'] == true,
+      attachments: (json['attachments'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
     );
   }
 
@@ -284,6 +304,7 @@ class Exam {
   final DateTime date;
   final String format;
   final String gradingBreakdown;
+  final List<String> attachments;
 
   Exam({
     required this.id,
@@ -291,6 +312,7 @@ class Exam {
     required this.date,
     required this.format,
     required this.gradingBreakdown,
+    this.attachments = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -300,6 +322,7 @@ class Exam {
       'date': date.toIso8601String(),
       'format': format,
       'gradingBreakdown': gradingBreakdown,
+      'attachments': attachments,
     };
   }
 
@@ -310,6 +333,10 @@ class Exam {
       date: json['date'] != null ? DateTime.tryParse(json['date'].toString()) ?? DateTime.now() : DateTime.now(),
       format: json['format']?.toString() ?? '',
       gradingBreakdown: json['gradingBreakdown']?.toString() ?? '',
+      attachments: (json['attachments'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
     );
   }
 }

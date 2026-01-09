@@ -8,8 +8,6 @@ import '../widgets/schedule_event_card.dart';
 import '../widgets/loading_shimmer.dart';
 import 'event_detail_screen.dart';
 import 'package:intl/intl.dart';
-import '../providers/app_session_provider.dart';
-import '../storage_services.dart';
 
 class ScheduleScreen extends ConsumerStatefulWidget {
   const ScheduleScreen({super.key});

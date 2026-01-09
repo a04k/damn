@@ -1,142 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../core/api_config.dart';
 import '../providers/app_mode_provider.dart';
 import '../providers/app_session_provider.dart';
+import '../services/data_service.dart';
+import '../models/course.dart';
 import '../models/user.dart';
 
 /// Content type enum for professor content creation
 enum ContentType { lecture, assignment, exam }
-
-/// Simple course model for dropdown
-class SimpleCourse {
-  final String id;
-  final String code;
-  final String name;
-
-  SimpleCourse({required this.id, required this.code, required this.name});
-
-  factory SimpleCourse.fromJson(Map<String, dynamic> json) {
-    return SimpleCourse(
-      id: json['id']?.toString() ?? '',
-      code: json['code']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
-    );
-  }
-}
-
-/// API Service for content creation - all API calls in one place
-class ContentApi {
-  static const String baseUrl = 'http://localhost:3000/api';
-
-  /// Get courses assigned to a professor
-  static Future<List<SimpleCourse>> getProfessorCourses(String email) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/doctor-courses/${Uri.encodeComponent(email)}'),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['courses'] != null) {
-          return (data['courses'] as List)
-              .map((c) => SimpleCourse.fromJson(c))
-              .toList();
-        }
-      }
-      return [];
-    } catch (e) {
-      debugPrint('Error fetching professor courses: $e');
-      return [];
-    }
-  }
-
-  /// Create lecture content
-  static Future<bool> createLecture({
-    required String courseId,
-    required String title,
-    required String description,
-    required String professorEmail,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/content'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'courseId': courseId,
-          'title': title,
-          'description': description,
-          'contentType': 'lecture',
-          'createdBy': professorEmail,
-        }),
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Error creating lecture: $e');
-      return false;
-    }
-  }
-
-  /// Create assignment
-  static Future<bool> createAssignment({
-    required String courseId,
-    required String title,
-    required String description,
-    required DateTime dueDate,
-    required int points,
-    required String professorEmail,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/assignments'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'courseId': courseId,
-          'title': title,
-          'description': description,
-          'dueDate': dueDate.toIso8601String(),
-          'points': points,
-          'createdBy': professorEmail,
-        }),
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Error creating assignment: $e');
-      return false;
-    }
-  }
-
-  /// Create exam
-  static Future<bool> createExam({
-    required String courseId,
-    required String title,
-    required String description,
-    required DateTime examDate,
-    required int points,
-    required String professorEmail,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/exams'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'courseId': courseId,
-          'title': title,
-          'description': description,
-          'examDate': examDate.toIso8601String(),
-          'points': points,
-          'createdBy': professorEmail,
-        }),
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Error creating exam: $e');
-      return false;
-    }
-  }
-}
 
 /// Main screen for adding content (professors only)
 class AddContentScreen extends ConsumerStatefulWidget {
@@ -149,10 +25,14 @@ class AddContentScreen extends ConsumerStatefulWidget {
 class _AddContentScreenState extends ConsumerState<AddContentScreen> {
   // State
   ContentType? _selectedType;
-  List<SimpleCourse> _courses = [];
+  List<Course> _courses = [];
   bool _isLoading = true;
   bool _isSubmitting = false;
   String? _errorMessage;
+  
+  // Attachments
+  List<String> _uploadedFiles = [];
+  bool _isUploading = false;
 
   // Form controllers
   final _formKey = GlobalKey<FormState>();
@@ -186,16 +66,25 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
       return;
     }
 
-    final courses = await ContentApi.getProfessorCourses(user.email);
-    
-    if (mounted) {
-      setState(() {
-        _courses = courses;
-        _isLoading = false;
-        if (courses.isEmpty) {
-          _errorMessage = 'No courses assigned. Contact admin to assign courses.';
-        }
-      });
+    try {
+      final courses = await DataService.getProfessorCourses(user.email);
+      
+      if (mounted) {
+        setState(() {
+          _courses = courses;
+          _isLoading = false;
+          if (courses.isEmpty) {
+            _errorMessage = 'No courses assigned. Contact admin to assign courses.';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString();
+        });
+      }
     }
   }
 
@@ -235,6 +124,65 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
     }
   }
 
+  Future<void> _pickAndUploadFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+      );
+
+      if (result != null) {
+        setState(() => _isUploading = true);
+
+        // Create request
+        var request = http.MultipartRequest('POST', Uri.parse('${ApiConfig.baseUrl}/upload'));
+        
+        // Add headers
+        final authHeader = ApiConfig.authHeaders['Authorization'];
+        if (authHeader != null) {
+           request.headers['Authorization'] = authHeader;
+        }
+
+        // Add file
+        if (result.files.first.bytes != null) {
+          // Web or bytes provided
+          request.files.add(http.MultipartFile.fromBytes(
+            'file',
+            result.files.first.bytes!,
+            filename: result.files.first.name,
+          ));
+        } else if (result.files.first.path != null) {
+          // Mobile/Desktop
+          request.files.add(await http.MultipartFile.fromPath(
+            'file',
+            result.files.first.path!,
+          ));
+        }
+
+        // Send
+        var streamedResponse = await request.send();
+        var response = await http.Response.fromStream(streamedResponse);
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final data = jsonDecode(response.body);
+          if (data['success'] == true && data['fileUrl'] != null) {
+            setState(() {
+              _uploadedFiles.add(data['fileUrl']);
+              _isUploading = false;
+            });
+            _showMessage('Uploaded: ${result.files.first.name}', isError: false);
+          } else {
+             throw Exception(data['message'] ?? 'Upload failed');
+          }
+        } else {
+          throw Exception('Server error: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      setState(() => _isUploading = false);
+      _showMessage('Error uploading: $e', isError: true);
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCourseId == null) {
@@ -248,55 +196,58 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
 
     setState(() => _isSubmitting = true);
 
-    final user = ref.read(currentUserProvider).value;
-    if (user == null) {
-      _showMessage('Session expired. Please login again.', isError: true);
-      setState(() => _isSubmitting = false);
-      return;
-    }
-
     bool success = false;
 
-    switch (_selectedType) {
-      case ContentType.lecture:
-        success = await ContentApi.createLecture(
-          courseId: _selectedCourseId!,
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
-          professorEmail: user.email,
-        );
-        break;
-      case ContentType.assignment:
-        success = await ContentApi.createAssignment(
-          courseId: _selectedCourseId!,
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
-          dueDate: _selectedDate!,
-          points: int.tryParse(_pointsController.text) ?? 100,
-          professorEmail: user.email,
-        );
-        break;
-      case ContentType.exam:
-        success = await ContentApi.createExam(
-          courseId: _selectedCourseId!,
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
-          examDate: _selectedDate!,
-          points: int.tryParse(_pointsController.text) ?? 100,
-          professorEmail: user.email,
-        );
-        break;
-      default:
-        break;
+    try {
+      switch (_selectedType) {
+        case ContentType.lecture:
+          success = await DataService.createContent(
+            courseId: _selectedCourseId!,
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            contentType: 'LECTURE',
+            attachments: _uploadedFiles,
+          );
+          break;
+        case ContentType.assignment:
+          success = await DataService.createAssignment(
+            courseId: _selectedCourseId!,
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            dueDate: _selectedDate!,
+            maxPoints: int.tryParse(_pointsController.text) ?? 100,
+            attachments: _uploadedFiles,
+          );
+          break;
+        case ContentType.exam:
+          success = await DataService.createExam(
+            courseId: _selectedCourseId!,
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            examDate: _selectedDate!,
+            maxPoints: int.tryParse(_pointsController.text) ?? 100,
+            attachments: _uploadedFiles,
+          );
+          break;
+        default:
+          break;
+      }
+    } catch (e) {
+      debugPrint('Error creating content: $e');
+      success = false;
     }
 
     setState(() => _isSubmitting = false);
 
     if (success) {
-      _showMessage('${_typeName} created! Students have been notified.', isError: false);
-      _resetForm();
+      if (mounted) {
+        _showMessage('$_typeName created! Students have been notified.', isError: false);
+        _resetForm();
+      }
     } else {
-      _showMessage('Failed to create ${_typeName.toLowerCase()}', isError: true);
+      if (mounted) {
+        _showMessage('Failed to create ${_typeName.toLowerCase()}', isError: true);
+      }
     }
   }
 
@@ -308,6 +259,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
       _descriptionController.clear();
       _pointsController.text = '100';
       _selectedDate = null;
+      _uploadedFiles.clear();
     });
   }
 
@@ -570,7 +522,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
           _buildLabel('Course'),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _selectedCourseId,
+            initialValue: _selectedCourseId,
             decoration: _inputDecoration('Select a course'),
             items: _courses.map((c) => DropdownMenuItem(
               value: c.id,
@@ -601,6 +553,68 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
             decoration: _inputDecoration('Enter description'),
             maxLines: 4,
             validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+          ),
+
+          // Attachments UI
+          const SizedBox(height: 20),
+          _buildLabel('Attachments'),
+          const SizedBox(height: 8),
+          if (_uploadedFiles.isNotEmpty)
+            Column(
+              children: _uploadedFiles.map((url) {
+                final name = url.split('/').last.split('-').length > 1 
+                  ? url.split('/').last.split('-').skip(1).join('-') 
+                  : url.split('/').last;
+                  
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.attach_file, size: 16, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          name,
+                          style: const TextStyle(fontSize: 13, color: Colors.blue),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => setState(() => _uploadedFiles.remove(url)),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4.0),
+                          child: Icon(Icons.close, size: 16, color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ElevatedButton.icon(
+              onPressed: _isUploading ? null : _pickAndUploadFile,
+              icon: _isUploading 
+                  ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)) 
+                  : const Icon(Icons.add, size: 16),
+              label: Text(_isUploading ? "Uploading..." : "Attach File", style: const TextStyle(fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                elevation: 0,
+                side: const BorderSide(color: Color(0xFFD1D5DB)),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
           ),
 
           // Points and Date (for assignment/exam only)
@@ -643,6 +657,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
                           decoration: BoxDecoration(
                             border: Border.all(color: const Color(0xFFD1D5DB)),
                             borderRadius: BorderRadius.circular(8),
+                            color: Colors.white,
                           ),
                           child: Row(
                             children: [

@@ -1,5 +1,6 @@
 /// User model - Non-freezed version for reliability
 /// Supports both students and professors
+library;
 
 enum AppMode { student, professor }
 
@@ -138,16 +139,7 @@ class User {
   /// Alias for program (backward compatibility)
   String? get major => program;
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is User &&
-          runtimeType == other.runtimeType &&
-          id == other.id &&
-          email == other.email;
 
-  @override
-  int get hashCode => id.hashCode ^ email.hashCode;
 
   @override
   String toString() => 'User(id: $id, email: $email, name: $name, mode: $mode)';

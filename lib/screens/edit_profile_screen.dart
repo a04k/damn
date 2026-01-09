@@ -1,4 +1,4 @@
-import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +7,7 @@ import '../providers/app_session_provider.dart';
 import '../providers/app_mode_provider.dart';
 import '../models/user.dart';
 import '../widgets/user_avatar.dart';
+import '../services/data_service.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -30,6 +31,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String? _selectedDepartmentId;
   String? _selectedProgramId;
   int? _selectedLevel;
+  bool _isProfessor = false;
 
   @override
   void initState() {
@@ -39,6 +41,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _gpaController = TextEditingController(text: user?.gpa?.toString() ?? '');
     _avatarUrl = user?.avatar;
     _selectedLevel = user?.level;
+    
+    if (user != null) {
+      _isProfessor = user.mode == AppMode.professor;
+    }
 
     // Load static data and then map user values
     _loadDepartmentData(user);
@@ -46,8 +52,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _loadDepartmentData(User? user) async {
     try {
-      final String jsonString = await rootBundle.loadString('assets/mock/departments.json');
-      final data = jsonDecode(jsonString);
+      final data = await DataService.getDepartments();
 
       if (!mounted) return;
 
@@ -285,8 +290,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Program Dropdown (only visible if dept selected)
-              if (_selectedDepartmentId != null) ...[
+              // Program Dropdown (only visible if dept selected and Not Professor)
+              if (!_isProfessor && _selectedDepartmentId != null) ...[
                 _buildDropdown(
                   label: 'Program',
                   icon: Icons.school_outlined,
@@ -302,6 +307,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const SizedBox(height: 20),
               ],
 
+              if (!_isProfessor)
               Row(
                 children: [
                    // Level Dropdown
@@ -390,7 +396,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     const goldColor = Color(0xFFFDC800);
 
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items,
       onChanged: onChanged,
       style: const TextStyle(color: navyColor),

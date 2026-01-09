@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/app_session_provider.dart';
-import '../providers/app_mode_provider.dart';
 import '../models/user.dart';
 import '../widgets/user_avatar.dart';
 import 'edit_profile_screen.dart';
-import '../storage_services.dart';
+import 'professor/professor_profile_screen.dart';
+import '../providers/task_provider.dart';
+import '../providers/course_provider.dart';
+import '../providers/schedule_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -20,6 +22,10 @@ class ProfileScreen extends ConsumerWidget {
       body: userAsync.when(
         data: (user) {
           if (user == null) return const Center(child: Text('User not found'));
+
+          if (user.mode == AppMode.professor) {
+            return const ProfessorProfileScreen();
+          }
 
           return CustomScrollView(
             slivers: [
@@ -417,6 +423,13 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(context);
               await ref.read(appSessionControllerProvider.notifier).logout();
+              
+              // Clear previous user data
+              ref.invalidate(taskStateProvider);
+              ref.invalidate(scheduleEventsProvider);
+              ref.invalidate(enrolledCoursesProvider);
+              ref.invalidate(upcomingEventsProvider);
+              
               if (context.mounted) context.go('/login');
             },
             child: const Text('Logout', style: TextStyle(color: Color(0xFF002147), fontWeight: FontWeight.bold)),

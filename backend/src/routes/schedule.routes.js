@@ -10,6 +10,120 @@ const { validate } = require('../middleware/validate');
 const { authenticate } = require('../middleware/auth');
 const { ApiError } = require('../middleware/errorHandler');
 
+// ============ GET UPCOMING EVENTS ============
+
+router.get('/upcoming',
+  authenticate,
+  async (req, res, next) => {
+    try {
+      const days = parseInt(req.query.days) || 7;
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + days);
+
+      // Re-use the main logic by redirecting or calling internal function?
+      // Easier to copy logic or make a shared service function.
+      // For now, duplicate specific logic for safety and speed.
+
+       const where = {
+        userId: req.user.id,
+        startTime: {
+          gte: startDate,
+          lte: endDate
+        }
+      };
+
+      const events = await prisma.scheduleEvent.findMany({
+        where,
+        orderBy: { startTime: 'asc' }
+      });
+      
+      // Also get course schedule for enrolled courses
+      const enrollments = await prisma.enrollment.findMany({
+        where: { userId: req.user.id, status: 'ENROLLED' },
+        include: {
+          course: {
+            include: {
+              scheduleSlots: true,
+              instructors: {
+                include: {
+                  user: {
+                    select: { name: true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      const courseEvents = [];
+      const today = new Date();
+      // Calculate relevant dates within range
+      
+      // Simple logic: iterate days in range
+      for (let i = 0; i < days; i++) {
+        const loopDate = new Date(today);
+        loopDate.setDate(today.getDate() + i);
+        const dayName = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'][loopDate.getDay()];
+        
+        for (const enrollment of enrollments) {
+          for (const slot of enrollment.course.scheduleSlots) {
+             if (slot.dayOfWeek === dayName) {
+                const [startHour, startMin] = slot.startTime.split(':').map(Number);
+                const [endHour, endMin] = slot.endTime.split(':').map(Number);
+                
+                const startTime = new Date(loopDate);
+                startTime.setHours(startHour, startMin, 0, 0);
+                
+                const endTime = new Date(loopDate);
+                endTime.setHours(endHour, endMin, 0, 0);
+                
+                 const instructor = enrollment.course.instructors.find(ins => ins.isPrimary)?.user?.name ||
+                                    enrollment.course.instructors[0]?.user?.name || 'TBA';
+
+                 courseEvents.push({
+                    id: `${enrollment.course.id}-${slot.id}-${loopDate.getTime()}`,
+                    title: `${enrollment.course.code}: ${enrollment.course.name}`,
+                    eventType: 'LECTURE',
+                    startTime,
+                    endTime,
+                    location: slot.location,
+                    instructor,
+                    isRecurring: true,
+                    courseId: enrollment.course.id
+                 });
+             }
+          }
+        }
+      }
+      
+      // Determine what to return
+      res.json({
+        success: true,
+        events: [
+          ...events.map(e => ({
+            id: e.id,
+            title: e.title,
+            description: e.description,
+            eventType: e.eventType,
+            startTime: e.startTime,
+            endTime: e.endTime,
+            location: e.location,
+            isAllDay: e.isAllDay,
+            isRecurring: e.isRecurring
+          })),
+          ...courseEvents
+        ]
+      });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+
 // ============ GET SCHEDULE EVENTS ============
 
 router.get('/',
@@ -54,44 +168,52 @@ router.get('/',
         }
       });
 
-      // Convert recurring course schedules to events for the week
+      // Convert recurring course schedules to events for the requested range
       const courseEvents = [];
-      const today = new Date();
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay());
+      
+      // Default to wider range (-30 to +60 days) to ensure calendar population
+      const start = startDate ? new Date(startDate) : new Date(new Date().setDate(new Date().getDate() - 30));
+      const end = endDate ? new Date(endDate) : new Date(new Date().setDate(new Date().getDate() + 60));
+      
+      const daysMap = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
 
-      for (const enrollment of enrollments) {
-        for (const slot of enrollment.course.scheduleSlots) {
-          const dayIndex = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
-            .indexOf(slot.dayOfWeek);
+      // logger.info(`Generating schedule for ${req.user.email} from ${start.toISOString()} to ${end.toISOString()}`);
+      console.log(`Generating schedule for ${req.user.email} from ${start.toISOString()} to ${end.toISOString()}`);
+      console.log(`Found ${enrollments.length} enrollments`);
 
-          const eventDate = new Date(weekStart);
-          eventDate.setDate(weekStart.getDate() + dayIndex);
+      // Loop through each day in the range
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          const currentDayName = daysMap[d.getDay()];
+          
+          for (const enrollment of enrollments) {
+              for (const slot of enrollment.course.scheduleSlots) {
+                  if (slot.dayOfWeek === currentDayName) {
+                      const [startHour, startMin] = slot.startTime.split(':').map(Number);
+                      const [endHour, endMin] = slot.endTime.split(':').map(Number);
+                      
+                      const startTime = new Date(d);
+                      startTime.setHours(startHour, startMin, 0, 0);
+                      
+                      const endTime = new Date(d);
+                      endTime.setHours(endHour, endMin, 0, 0);
+                      
+                      const instructor = enrollment.course.instructors.find(i => i.isPrimary)?.user?.name ||
+                                        enrollment.course.instructors[0]?.user?.name || 'TBA';
 
-          const [startHour, startMin] = slot.startTime.split(':').map(Number);
-          const [endHour, endMin] = slot.endTime.split(':').map(Number);
-
-          const startTime = new Date(eventDate);
-          startTime.setHours(startHour, startMin, 0, 0);
-
-          const endTime = new Date(eventDate);
-          endTime.setHours(endHour, endMin, 0, 0);
-
-          const instructor = enrollment.course.instructors.find(i => i.isPrimary)?.user?.name ||
-                            enrollment.course.instructors[0]?.user?.name || 'TBA';
-
-          courseEvents.push({
-            id: `${enrollment.course.id}-${slot.id}`,
-            title: `${enrollment.course.code}: ${enrollment.course.name}`,
-            eventType: 'LECTURE',
-            startTime,
-            endTime,
-            location: slot.location,
-            instructor,
-            isRecurring: true,
-            courseId: enrollment.course.id
-          });
-        }
+                      courseEvents.push({
+                          id: `${enrollment.course.id}-${slot.id}-${d.getTime()}`,
+                          title: `${enrollment.course.code}: ${enrollment.course.name}`,
+                          eventType: 'LECTURE',
+                          startTime,
+                          endTime,
+                          location: slot.location,
+                          instructor,
+                          isRecurring: true,
+                          courseId: enrollment.course.id
+                      });
+                  }
+              }
+          }
       }
 
       // Also add upcoming exams/assignments from tasks

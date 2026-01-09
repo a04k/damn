@@ -14,7 +14,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _isLoading = false;
-  bool _emailSent = false;
+  final bool _emailSent = false;
   String? _errorMessage;
 
   @override

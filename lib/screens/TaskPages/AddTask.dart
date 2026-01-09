@@ -15,7 +15,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
-  String importance = "";
+  String importance = "Medium";
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +25,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.blueGrey),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1F2C5C)),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
@@ -44,68 +44,67 @@ class _AddTaskPageState extends State<AddTaskPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Task Name", style: labelStyle),
+              _buildLabel("Task Name"),
               const SizedBox(height: 6),
-              inputBox(titleController, hint: "Enter task name"),
+              _buildInputBox(titleController, hint: "What needs to be done?"),
               const SizedBox(height: 16),
-              const Text("Description", style: labelStyle),
+              _buildLabel("Description"),
               const SizedBox(height: 6),
-              descriptionBox(descController),
+              _buildLargeInputBox(descController, hint: "Add some details..."),
               const SizedBox(height: 16),
-              const Text("Deadline", style: labelStyle),
+              _buildLabel("Deadline"),
               const SizedBox(height: 6),
               Row(
                 children: [
                   Expanded(
-                    child: dateBox(
-                      title:
-                          selectedDate == null
-                              ? "Pick a date"
-                              : DateFormat(
-                                'MMMM dd, yyyy',
-                              ).format(selectedDate!),
-                      onTap: pickDate,
+                    child: _buildDateControl(
+                      title: selectedDate == null
+                          ? "Date"
+                          : DateFormat('MMM dd, yyyy').format(selectedDate!),
+                      icon: Icons.calendar_today,
+                      onTap: _pickDate,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: dateBox(
-                      title:
-                          selectedTime == null
-                              ? "Pick time"
-                              : selectedTime!.format(context),
-                      onTap: pickTime,
+                    child: _buildDateControl(
+                      title: selectedTime == null
+                          ? "Time"
+                          : selectedTime!.format(context),
+                      icon: Icons.access_time,
+                      onTap: _pickTime,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 22),
-              const Text("Importance", style: labelStyle),
+              _buildLabel("Priority"),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  priorityButton("Low", Colors.green),
+                  _buildPriorityButton("Low", Colors.green),
                   const SizedBox(width: 10),
-                  priorityButton("Medium", Colors.orange),
+                  _buildPriorityButton("Medium", Colors.orange),
                   const SizedBox(width: 10),
-                  priorityButton("High", Colors.red),
+                  _buildPriorityButton("High", Colors.red),
                 ],
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
-                height: 48,
+                height: 52,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1F2C96),
+                    backgroundColor: const Color(0xFF002147),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    elevation: 0,
                   ),
-                  onPressed: saveTask,
+                  onPressed: _saveTask,
                   child: const Text(
-                    "Save",
-                    style: TextStyle(fontSize: 16, color: Colors.white),
+                    "Create Task",
+                    style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -116,58 +115,57 @@ class _AddTaskPageState extends State<AddTaskPage> {
     );
   }
 
-  void saveTask() {
-    if (titleController.text.isEmpty ||
-        selectedDate == null ||
-        selectedTime == null) {
+  void _saveTask() {
+    if (titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please complete all required fields")),
+        const SnackBar(content: Text("Please enter a task name")),
       );
       return;
     }
 
-    final notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    DateTime? dueDate;
+    if (selectedDate != null && selectedTime != null) {
+      dueDate = DateTime(
+        selectedDate!.year,
+        selectedDate!.month,
+        selectedDate!.day,
+        selectedTime!.hour,
+        selectedTime!.minute,
+      );
+    }
 
-    final task = {
+    final int notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+    if (dueDate != null) {
+      NotificationService.scheduleTaskNotifications(
+        id: notificationId,
+        title: titleController.text,
+        dueDate: dueDate,
+        body: descController.text.isNotEmpty 
+            ? descController.text 
+            : 'Your task is due!',
+      );
+    }
+
+    Navigator.pop(context, {
       "title": titleController.text,
       "description": descController.text,
-      "date": selectedDate,
-      "time": selectedTime,
+      "dueDate": dueDate,
       "priority": importance,
-      "course": "General",
-      "notificationId": notificationId,
-    };
-
-    // Schedule notifications (1 day and 1 hour before)
-    final scheduledDate = DateTime(
-      selectedDate!.year,
-      selectedDate!.month,
-      selectedDate!.day,
-      selectedTime!.hour,
-      selectedTime!.minute,
-    );
-
-    NotificationService.scheduleTaskNotifications(
-      id: notificationId,
-      title: task['title'] as String,
-      dueDate: scheduledDate,
-      body: 'Your task "${task['title']}" is due soon!',
-    );
-
-    Navigator.pop(context, task);
+    });
   }
 
-  Future pickDate() async {
+  Future<void> _pickDate() async {
     DateTime? date = await showDatePicker(
       context: context,
       initialDate: selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (date != null) setState(() => selectedDate = date);
   }
 
-  Future pickTime() async {
+  Future<void> _pickTime() async {
     TimeOfDay? time = await showTimePicker(
       context: context,
       initialTime: selectedTime ?? TimeOfDay.now(),
@@ -175,26 +173,99 @@ class _AddTaskPageState extends State<AddTaskPage> {
     if (time != null) setState(() => selectedTime = time);
   }
 
-  Widget priorityButton(String text, Color color) {
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Color(0xFF1F2C5C),
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  Widget _buildInputBox(TextEditingController controller, {required String hint}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLargeInputBox(TextEditingController controller, {required String hint}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextField(
+        controller: controller,
+        maxLines: 4,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateControl({required String title, required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 52,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: const Color(0xFF1F2C5C)),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(color: Color(0xFF1F2C5C), fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityButton(String text, Color color) {
     bool isSelected = importance == text;
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => importance = text),
         child: Container(
-          height: 40,
+          height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? color : const Color(0xFFEEC97A),
+              color: isSelected ? color : Colors.transparent,
+              width: 2,
             ),
-            color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
+            color: isSelected ? color.withOpacity(0.1) : const Color(0xFFF3F4F6),
           ),
           child: Text(
             text,
             style: TextStyle(
-              color: isSelected ? color : const Color(0xFF1F2C5C),
-              fontWeight: FontWeight.w500,
+              color: isSelected ? color : const Color(0xFF6B7280),
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ),
@@ -202,52 +273,3 @@ class _AddTaskPageState extends State<AddTaskPage> {
     );
   }
 }
-
-const labelStyle = TextStyle(
-  color: Color(0xFF1F2C5C),
-  fontSize: 14,
-  fontWeight: FontWeight.w600,
-);
-
-Widget inputBox(TextEditingController controller, {required String hint}) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-    decoration: boxDecoration,
-    child: TextField(
-      controller: controller,
-      decoration: InputDecoration(border: InputBorder.none, hintText: hint),
-    ),
-  );
-}
-
-Widget descriptionBox(TextEditingController controller) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: boxDecoration,
-    child: TextField(
-      controller: controller,
-      maxLines: 5,
-      decoration: const InputDecoration(border: InputBorder.none),
-    ),
-  );
-}
-
-Widget dateBox({required String title, required VoidCallback onTap}) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Container(
-      height: 50,
-      alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: boxDecoration,
-      child: Text(title, style: const TextStyle(color: Color(0xFF1F2C5C))),
-    ),
-  );
-}
-
-const boxDecoration = BoxDecoration(
-  borderRadius: BorderRadius.all(Radius.circular(10)),
-  border: Border.fromBorderSide(
-    BorderSide(color: Color(0xFFEEC97A), width: 1.4),
-  ),
-);

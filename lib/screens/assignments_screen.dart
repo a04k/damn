@@ -29,13 +29,34 @@ class _AssignmentsScreenState extends ConsumerState<AssignmentsScreen> with Sing
 
   @override
   Widget build(BuildContext context) {
-    final tasksAsync = ref.watch(tasksProvider);
+    // Use direct state - not async for instant updates
+    final taskState = ref.watch(taskStateProvider);
+    final tasks = taskState.courseTasks; // Only course tasks (not personal)
+
+    // Filter pending and completed
+    final pending = tasks.where((t) => t.status != TaskStatus.completed).toList();
+    pending.sort((a, b) {
+      if (a.dueDate == null && b.dueDate == null) return 0;
+      if (a.dueDate == null) return 1;
+      if (b.dueDate == null) return -1;
+      return a.dueDate!.compareTo(b.dueDate!);
+    });
+    
+    final completed = tasks.where((t) => t.status == TaskStatus.completed).toList();
+    completed.sort((a, b) {
+      if (a.dueDate == null && b.dueDate == null) return 0;
+      if (a.dueDate == null) return 1;
+      if (b.dueDate == null) return -1;
+      return b.dueDate!.compareTo(a.dueDate!);
+    });
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Assignments'),
+        backgroundColor: const Color(0xFF002147),
+        foregroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
         ),
         bottom: TabBar(
@@ -49,43 +70,18 @@ class _AssignmentsScreenState extends ConsumerState<AssignmentsScreen> with Sing
           ],
         ),
       ),
-      body: tasksAsync.when(
-        data: (tasks) {
-          // Filter assignments (non-personal)
-          // We treat anything NOT 'PERSONAL' as course work (Assignment, Lab, Exam)
-          final assignments = tasks.where((t) => t.type != 'PERSONAL').toList();
-          
-          final pending = assignments.where((t) => t.status != TaskStatus.completed).toList();
-          // Sort by due date
-          pending.sort((a, b) => a.dueDate.compareTo(b.dueDate));
-          
-          final completed = assignments.where((t) => t.status == TaskStatus.completed).toList();
-          completed.sort((a, b) => b.dueDate.compareTo(a.dueDate)); // Most recent first
-
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _buildTaskList(pending, isPending: true),
-              _buildTaskList(completed, isPending: false),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, s) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error loading assignments: $e'),
-              ElevatedButton(
-                onPressed: () => ref.refresh(tasksProvider),
-                child: const Text('Retry'),
-              )
-            ],
-          ),
-        ),
-      ),
+      body: taskState.isLoading && tasks.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: () => ref.read(taskStateProvider.notifier).fetchTasks(force: true),
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildTaskList(pending, isPending: true),
+                  _buildTaskList(completed, isPending: false),
+                ],
+              ),
+            ),
     );
   }
 
@@ -110,6 +106,7 @@ class _AssignmentsScreenState extends ConsumerState<AssignmentsScreen> with Sing
       itemCount: tasks.length,
       itemBuilder: (context, index) {
         final task = tasks[index];
+        final typeStr = task.taskType.name.toUpperCase();
         return Card(
           elevation: 2,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -120,12 +117,12 @@ class _AssignmentsScreenState extends ConsumerState<AssignmentsScreen> with Sing
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: _getTypeColor(task.type).withOpacity(0.1),
+                  color: _getTypeColor(typeStr).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
-                  _getTypeIcon(task.type),
-                  color: _getTypeColor(task.type),
+                  _getTypeIcon(typeStr),
+                  color: _getTypeColor(typeStr),
                   size: 24,
                 ),
               ),
@@ -148,21 +145,23 @@ class _AssignmentsScreenState extends ConsumerState<AssignmentsScreen> with Sing
                       Text(task.subject, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.access_time, size: 14, color: _getDueDateColor(task.dueDate, task.status)),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Due: ${DateFormat('MMM d, h:mm a').format(task.dueDate)}', 
-                        style: TextStyle(
-                          color: _getDueDateColor(task.dueDate, task.status),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                  if (task.dueDate != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time, size: 14, color: _getDueDateColor(task.dueDate!, task.status)),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Due: ${DateFormat('MMM d, h:mm a').format(task.dueDate!)}', 
+                          style: TextStyle(
+                            color: _getDueDateColor(task.dueDate!, task.status),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
               trailing: isPending 
@@ -171,8 +170,7 @@ class _AssignmentsScreenState extends ConsumerState<AssignmentsScreen> with Sing
                     child: Checkbox(
                       value: false, 
                       onChanged: (val) {
-                         // Optimistically update via controller
-                        ref.read(taskControllerProvider.notifier).toggleTaskStatus(task.id);
+                        ref.read(taskStateProvider.notifier).toggleTaskStatus(task.id);
                       },
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),

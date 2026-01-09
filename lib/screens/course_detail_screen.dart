@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/course_provider.dart';
 import '../models/course.dart';
-import '../providers/app_session_provider.dart';
-import '../storage_services.dart';
 
 class CourseDetailScreen extends ConsumerStatefulWidget {
   final String courseId;
@@ -401,43 +400,176 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
 
     return Column(
       children: course.content.map((c) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF4FF),
-                  borderRadius: BorderRadius.circular(8),
+        return InkWell(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
-                child: Center(
-                    child: Text('W${c.week}',
-                        style: const TextStyle(fontWeight: FontWeight.w700))),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(c.topic,
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 6),
-                    Text(c.description,
-                        style: TextStyle(color: Colors.grey.shade600)),
-                  ],
+                builder: (context) => FractionallySizedBox(
+                  heightFactor: 0.9,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  c.topic,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Week ${c.week}',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                const Text(
+                                  'Description',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  c.description,
+                                  style: TextStyle(
+                                    color: Colors.grey[700],
+                                    height: 1.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                if (c.attachments.isNotEmpty) ...[
+                                  const Text(
+                                    'Attachments',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ...c.attachments.map((url) => InkWell(
+                                        onTap: () async {
+                                          final uri = Uri.parse(url);
+                                          if (await canLaunchUrl(uri)) {
+                                            await launchUrl(uri);
+                                          }
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(bottom: 8.0),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.attach_file,
+                                                  color: Colors.blue),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  url.split('/').last,
+                                                  style: const TextStyle(
+                                                    color: Colors.blue,
+                                                    decoration: TextDecoration.underline,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      )),
+                                  const SizedBox(height: 32),
+                                ],
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () => context.pop(),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF2E6AFF),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text('Close'),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade200),
               ),
-            ],
-          ),
-        );
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF4FF),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                        child: Text('W${c.week}',
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w700))),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(c.topic,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 6),
+                        Text(c.description,
+                            style: TextStyle(color: Colors.grey.shade600)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ));
       }).toList(),
     );
   }
@@ -455,71 +587,262 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
 
     return Column(
       children: course.assignments.map((a) {
-        return Container(
+        return Card(
           margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // title + points pill
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      a.title,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          child: InkWell(
+            onTap: () {
+              // Convert Assignment to Task for compatibility
+              // In a real app, you might fetch the full task or have a unified model
+              // For now, we creating a temporary Task object to view details
+              /*
+              final task = Task(
+                id: a.id,
+                title: a.title,
+                description: a.description,
+                dueDate: a.dueDate,
+                status: a.isSubmitted ? TaskStatus.completed : TaskStatus.pending,
+                taskType: TaskType.assignment,
+                priority: TaskPriority.medium,
+                subject: course.name,
+                courseId: course.id,
+                maxPoints: a.maxScore,
+              );
+              
+              Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (_) => TaskDetailsPage(task: task))
+              );
+              */
+              // Since we don't have easy access to Task model imports without potentially breaking things
+              // let's show a simple bottom sheet with details for now, or use the router if setup
+              
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                builder: (context) => Container(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.assignment, color: Colors.orange),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  a.title,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${a.maxScore} points',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Description',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        a.description,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      if (a.attachments.isNotEmpty) ...[
+                        const Text(
+                          'Attachments',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...a.attachments.map((url) => InkWell(
+                              onTap: () async {
+                                final uri = Uri.parse(url);
+                                if (await canLaunchUrl(uri)) {
+                                  await launchUrl(uri);
+                                }
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.attach_file,
+                                        color: Colors.blue),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        url.split('/').last,
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )),
+                        const SizedBox(height: 24),
+                      ],
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today,
+                              size: 18, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Due: ${_formatDate(a.dueDate)}',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (a.isSubmitted)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Text(
+                                'Submitted',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            context.pop();
+                            // Navigate to submission screen if needed in future
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2E6AFF),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Close'),
+                        ),
+                      ),
+                    ],
                   ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF4FF),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                          color: const Color(0xFF2E6AFF).withOpacity(0.15)),
-                    ),
-                    child: Text('${a.maxScore} pts',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                            color: Color(0xFF2E6AFF))),
-                  )
-                ],
-              ),
-
-              const SizedBox(height: 8),
-
-              // description
-              Text(
-                a.description,
-                style: TextStyle(color: Colors.grey.shade700),
-              ),
-
-              const SizedBox(height: 12),
-
-              // due date row
-              Row(
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.calendar_month_outlined, size: 16),
-                  const SizedBox(width: 8),
-                  Text('Due: ${_formatDate(a.dueDate)}',
-                      style: TextStyle(color: Colors.grey.shade600)),
+                  // title + points pill
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          a.title,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF4FF),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color: const Color(0xFF2E6AFF).withOpacity(0.15)),
+                        ),
+                        child: Text('${a.maxScore} pts',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                color: Color(0xFF2E6AFF))),
+                      )
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // description
+                  Text(
+                    a.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // due date row
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_month_outlined, size: 16),
+                      const SizedBox(width: 8),
+                      Text('Due: ${_formatDate(a.dueDate)}',
+                          style: TextStyle(color: Colors.grey.shade600)),
+                      const Spacer(),
+                      Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    ],
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         );
       }).toList(),

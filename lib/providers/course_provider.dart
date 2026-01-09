@@ -4,7 +4,63 @@ import '../models/user.dart';
 import '../services/data_service.dart';
 import 'app_session_provider.dart';
 
-/// All courses provider
+/// Current user's enrolled courses provider
+final enrolledCoursesProvider = AsyncNotifierProvider<EnrolledCoursesNotifier, List<Course>>(EnrolledCoursesNotifier.new);
+
+class EnrolledCoursesNotifier extends AsyncNotifier<List<Course>> {
+  @override
+  Future<List<Course>> build() async {
+    final user = ref.watch(currentUserProvider).valueOrNull;
+    if (user == null) return [];
+    
+    // Use email to fetch enrolled courses
+    return DataService.getEnrolledCourses(user.email);
+  }
+
+  Future<void> enroll(String courseId) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final success = await DataService.enrollInCourse(courseId);
+      if (!success) throw Exception('Failed to enroll in course');
+      return _fetchCourses();
+    });
+  }
+
+  Future<void> drop(String courseId) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final success = await DataService.dropCourse(courseId);
+      if (!success) throw Exception('Failed to drop course');
+      return _fetchCourses();
+    });
+  }
+
+  Future<List<Course>> _fetchCourses() async {
+    final user = ref.read(currentUserProvider).valueOrNull;
+    if (user == null) return [];
+    return DataService.getEnrolledCourses(user.email);
+  }
+}
+
+/// Professor's assigned courses provider
+final professorCoursesProvider = AsyncNotifierProvider<ProfessorCoursesNotifier, List<Course>>(ProfessorCoursesNotifier.new);
+
+class ProfessorCoursesNotifier extends AsyncNotifier<List<Course>> {
+  @override
+  Future<List<Course>> build() async {
+    final user = ref.watch(currentUserProvider).valueOrNull;
+    if (user == null || user.mode != AppMode.professor) return [];
+    
+    return DataService.getProfessorCourses(user.email);
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() => build());
+  }
+}
+
+/// All courses provider (Cache-able)
 final coursesProvider = FutureProvider<List<Course>>((ref) async {
   return DataService.getCourses();
 });
@@ -13,77 +69,6 @@ final coursesProvider = FutureProvider<List<Course>>((ref) async {
 final courseByIdProvider = FutureProvider.family<Course?, String>((ref, courseId) async {
   return DataService.getCourse(courseId);
 });
-
-/// Current user's enrolled courses
-final enrolledCoursesProvider = FutureProvider<List<Course>>((ref) async {
-  final userAsync = ref.watch(currentUserProvider);
-  
-  final user = userAsync.valueOrNull;
-  if (user == null) return [];
-  
-  // Get all courses first
-  final allCourses = await DataService.getCourses();
-  
-  // Filter by enrolled course IDs
-  if (user.enrolledCourses.isEmpty) {
-    // Try to fetch from API directly
-    return DataService.getEnrolledCourses(user.id);
-  }
-  
-  return allCourses.where((c) => user.enrolledCourses.contains(c.id)).toList();
-});
-
-/// Professor's assigned courses
-final professorCoursesProvider = FutureProvider<List<Course>>((ref) async {
-  final userAsync = ref.watch(currentUserProvider);
-  
-  final user = userAsync.valueOrNull;
-  if (user == null || user.mode != AppMode.professor) return [];
-  
-  return DataService.getProfessorCourses(user.email);
-});
-
-/// Course enrollment controller
-final courseControllerProvider = StateNotifierProvider<CourseController, AsyncValue<void>>((ref) {
-  return CourseController(ref);
-});
-
-class CourseController extends StateNotifier<AsyncValue<void>> {
-  final Ref _ref;
-
-  CourseController(this._ref) : super(const AsyncValue.data(null));
-
-  Future<void> enrollInCourse(String courseId) async {
-    state = const AsyncValue.loading();
-    try {
-      final success = await DataService.enrollInCourse(courseId);
-      if (success) {
-        // Refresh enrolled courses
-        _ref.invalidate(enrolledCoursesProvider);
-      }
-      state = const AsyncValue.data(null);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-    }
-  }
-
-  Future<void> dropCourse(String courseId) async {
-    state = const AsyncValue.loading();
-    try {
-      final success = await DataService.dropCourse(courseId);
-      if (success) {
-        _ref.invalidate(enrolledCoursesProvider);
-      }
-      state = const AsyncValue.data(null);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-    }
-  }
-
-  Future<void> removeFromWishlist(String courseId) async {
-    await dropCourse(courseId);
-  }
-}
 
 /// Course filter state
 final courseFilterProvider = StateProvider<CourseFilter>((ref) {

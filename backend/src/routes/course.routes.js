@@ -14,29 +14,61 @@ const logger = require('../utils/logger');
 /**
  * Format course for response
  */
-const formatCourse = (course) => ({
-  id: course.id,
-  code: course.code,
-  name: course.name,
-  description: course.description,
-  category: course.category.toLowerCase(),
-  creditHours: course.creditHours,
-  semester: course.semester,
-  year: course.year,
-  isActive: course.isActive,
-  professors: course.instructors?.map(i => ({
-    name: i.user.name,
-    email: i.user.email,
-    isPrimary: i.isPrimary
-  })) || [],
-  schedule: course.scheduleSlots?.map(s => ({
-    day: s.dayOfWeek,
-    time: `${s.startTime} - ${s.endTime}`,
-    location: s.location
-  })) || [],
-  content: course.content || [],
-  enrollmentCount: course._count?.enrollments || 0
-});
+const formatCourse = (course) => {
+  // Separate tasks into assignments and exams
+  const tasks = course.tasks || [];
+  const assignments = tasks.filter(t => t.taskType === 'ASSIGNMENT' || t.taskType === 'LAB').map(t => ({
+    id: t.id,
+    title: t.title,
+    description: t.description || '',
+    dueDate: t.dueDate,
+    maxScore: t.maxPoints || 100,
+    isSubmitted: false,
+    attachments: t.attachments || []
+  }));
+  
+  const exams = tasks.filter(t => t.taskType === 'EXAM' || t.taskType === 'QUIZ').map(t => ({
+    id: t.id,
+    title: t.title,
+    date: t.dueDate || t.startDate,
+    format: t.taskType === 'QUIZ' ? 'Quiz' : 'Exam',
+    gradingBreakdown: `${t.maxPoints} points`,
+    attachments: t.attachments || []
+  }));
+
+  return {
+    id: course.id,
+    code: course.code,
+    name: course.name,
+    description: course.description,
+    category: course.category.toLowerCase(),
+    creditHours: course.creditHours,
+    semester: course.semester,
+    year: course.year,
+    isActive: course.isActive,
+    professors: course.instructors?.map(i => ({
+      name: i.user.name,
+      email: i.user.email,
+      isPrimary: i.isPrimary
+    })) || [],
+    schedule: course.scheduleSlots?.map(s => ({
+      day: s.dayOfWeek,
+      time: `${s.startTime} - ${s.endTime}`,
+      location: s.location,
+      attachments: s.attachments || []
+    })) || [],
+    content: (course.content || []).map(c => ({
+      week: c.weekNumber || 0,
+      topic: c.title,
+      description: c.description || '',
+      attachments: c.attachments || []
+    })),
+    assignments: assignments,
+    exams: exams,
+    enrollmentCount: course._count?.enrollments || 0
+  };
+};
+
 
 // ============ GET ALL COURSES ============
 
@@ -110,6 +142,9 @@ router.get('/:id',
             where: { isPublished: true },
             orderBy: [{ weekNumber: 'asc' }, { orderIndex: 'asc' }]
           },
+          tasks: {
+            orderBy: { dueDate: 'asc' }
+          },
           _count: {
             select: { 
               enrollments: true,
@@ -163,6 +198,7 @@ router.get('/:id/content',
           description: c.description,
           type: c.contentType,
           fileUrl: c.fileUrl,
+          attachments: c.attachments,
           weekNumber: c.weekNumber,
           createdBy: c.createdBy.name,
           createdAt: c.createdAt
@@ -202,7 +238,7 @@ router.get('/:id/tasks',
           priority: t.priority,
           status: t.status,
           dueDate: t.dueDate,
-          points: t.points,
+          maxPoints: t.maxPoints,
           createdBy: t.createdBy.name,
           createdAt: t.createdAt
         }))

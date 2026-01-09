@@ -264,6 +264,8 @@ model Enrollment {
   course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   
   @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
   @@index([status])
   @@map("enrollments")
 }
@@ -284,6 +286,7 @@ model CourseContent {
   description String?     @db.Text
   contentType ContentType
   fileUrl     String?     @map("file_url")
+  attachments Json?       
   weekNumber  Int?        @map("week_number")
   orderIndex  Int         @default(0) @map("order_index")
   isPublished Boolean     @default(true) @map("is_published")
@@ -344,6 +347,7 @@ model Task {
   dueDate      DateTime?    @map("due_date")
   startDate    DateTime?    @map("start_date")
   maxPoints    Int          @default(100) @map("max_points")
+  attachments  Json?        
   
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
@@ -359,6 +363,9 @@ model Task {
   
   @@index([dueDate])
   @@index([courseId])
+  @@index([createdById])
+  @@index([status])
+  @@index([createdById, status])
   @@map("tasks")
 }
 

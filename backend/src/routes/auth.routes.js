@@ -183,9 +183,18 @@ router.post('/login',
       }
 
       // Update last login
+      const updateData = { lastLoginAt: new Date() };
+
+      // PATCH FIX: Ensure seeded users bypass onboarding if not set
+      // AND regular users bypass it for now as requested
+      if (!user.isOnboardingComplete) {
+         updateData.isOnboardingComplete = true;
+         user.isOnboardingComplete = true; // Update local obj for response
+      }
+
       await prisma.user.update({
         where: { id: user.id },
-        data: { lastLoginAt: new Date() }
+        data: updateData
       });
 
       // Generate token

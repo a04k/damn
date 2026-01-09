@@ -31,8 +31,8 @@ router.get('/',
               }
             }
           },
-          // Personal tasks created by user
-          { createdById: req.user.id, courseId: null }
+          // Tasks created by user (Personal or Professor Assignments)
+          { createdById: req.user.id }
         ],
         ...(status && { status }),
         ...(type && { taskType: type }),
@@ -69,7 +69,8 @@ router.get('/',
           priority: t.priority,
           status: t.status,
           dueDate: t.dueDate,
-          points: t.points,
+          maxPoints: t.maxPoints,
+          attachments: t.attachments,
           course: t.course ? {
             id: t.course.id,
             code: t.course.code,
@@ -104,7 +105,7 @@ router.get('/pending',
                 }
               }
             },
-            { createdById: req.user.id, courseId: null }
+            { createdById: req.user.id }
           ]
         },
         include: {
@@ -125,7 +126,8 @@ router.get('/pending',
           priority: t.priority,
           status: t.status,
           dueDate: t.dueDate,
-          points: t.points,
+          maxPoints: t.maxPoints,
+          attachments: t.attachments,
           courseName: t.course?.name || null,
           courseCode: t.course?.code || null
         }))

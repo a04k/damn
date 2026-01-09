@@ -4,8 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../models/announcement.dart';
 import '../providers/announcement_provider.dart';
-import '../providers/app_session_provider.dart';
-import '../storage_services.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -140,40 +138,50 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 }
 
   Widget _buildNotificationList(List<Announcement> announcements, String emptyMessage) {
-    if (announcements.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.notifications_off_outlined,
-              size: 64,
-              color: Colors.grey.shade300,
+    return RefreshIndicator(
+      onRefresh: () => ref.refresh(announcementsProvider.future),
+      child: announcements.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.6,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.notifications_off_outlined,
+                          size: 64,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          emptyMessage,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: announcements.length,
+              itemBuilder: (context, index) {
+                final announcement = announcements[index];
+                return NotificationCard(
+                  announcement: announcement,
+                  onTap: () => _markAsRead(announcement.id),
+                );
+              },
             ),
-            const SizedBox(height: 16),
-            Text(
-              emptyMessage,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: announcements.length,
-      itemBuilder: (context, index) {
-        final announcement = announcements[index];
-        return NotificationCard(
-          announcement: announcement,
-          onTap: () => _markAsRead(announcement.id),
-        );
-      },
     );
   }
 

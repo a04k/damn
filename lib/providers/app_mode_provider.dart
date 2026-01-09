@@ -11,18 +11,21 @@ class AppModeController extends StateNotifier<AppMode> {
   final Ref _ref;
 
   AppModeController(this._ref) : super(AppMode.student) {
-    _loadCurrentMode();
-  }
+    // Initialize state from current user
+    final user = _ref.read(currentUserProvider).valueOrNull;
+    if (user != null) state = user.mode;
 
-  void _loadCurrentMode() {
-    final userAsync = _ref.read(currentUserProvider);
-    final user = userAsync.valueOrNull;
-    if (user != null) {
-      state = user.mode;
-    }
+    // Listen for future updates (e.g. login)
+    _ref.listen<AsyncValue<User?>>(currentUserProvider, (previous, next) {
+      final user = next.valueOrNull;
+      if (user != null && user.mode != state) {
+        state = user.mode;
+      }
+    });
   }
 
   Future<void> switchMode(AppMode mode) async {
+    if (state == mode) return;
     state = mode;
     
     final sessionState = _ref.read(appSessionControllerProvider);

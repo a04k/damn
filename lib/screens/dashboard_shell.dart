@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../models/user.dart';
 import '../providers/app_mode_provider.dart';
-import '../widgets/custom_header.dart';
+
 import '../widgets/custom_bottom_navigation.dart';
 
 class DashboardShell extends ConsumerStatefulWidget {
@@ -39,7 +39,9 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
           // Main content
           Positioned.fill(child: widget.child),
           
-          // Custom header - only show on home screen
+          // Custom header - removed to avoid double header
+          // HomeScreen handles its own header
+          /*
           if (currentRoute.startsWith('/home'))
             const Positioned(
               top: 0,
@@ -47,6 +49,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
               right: 0,
               child: CustomHeader(),
             ),
+          */
           
           // Custom bottom navigation
           Positioned(

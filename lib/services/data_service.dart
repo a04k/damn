@@ -1,6 +1,7 @@
 /// Unified Data Service
 /// Single point of truth for all API interactions
 /// Replaces individual repositories with a clean, consistent interface
+library;
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -138,6 +139,24 @@ class DataService {
     }
   }
 
+  /// Get departments and levels metadata
+  static Future<Map<String, dynamic>> getDepartments() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/users/metadata/departments'),
+        headers: ApiConfig.headers,
+      );
+      
+      if (response.statusCode == 200) {
+        return Map<String, dynamic>.from(jsonDecode(response.body));
+      }
+      return {};
+    } catch (e) {
+      print('[DataService] Get departments error: $e');
+      return {};
+    }
+  }
+
   /// Logout
   static Future<void> logout() async {
     ApiConfig.clearAuth();
@@ -185,17 +204,22 @@ class DataService {
   }
   
   /// Get student's enrolled courses
-  static Future<List<Course>> getEnrolledCourses(String userId) async {
+  static Future<List<Course>> getEnrolledCourses(String userEmail) async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/users/$userId/courses'),
+        Uri.parse('${ApiConfig.baseUrl}/users/${Uri.encodeComponent(userEmail)}/enrollments'),
         headers: ApiConfig.authHeaders,
       );
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List courses = data['courses'] ?? [];
-        return courses.map((c) => Course.fromJson(c)).toList();
+        final List enrollments = data['enrollments'] ?? [];
+        return enrollments.map((e) {
+          final courseData = e['course'] as Map<String, dynamic>;
+          // Add enrollment status
+          courseData['enrollmentStatus'] = 'enrolled';
+          return Course.fromJson(courseData);
+        }).toList();
       }
       return [];
     } catch (e) {
@@ -208,7 +232,7 @@ class DataService {
   static Future<List<Course>> getProfessorCourses(String email) async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/courses/professor/${Uri.encodeComponent(email)}'),
+        Uri.parse('${ApiConfig.baseUrl}/users/professor/courses?email=${Uri.encodeComponent(email)}'),
         headers: ApiConfig.authHeaders,
       );
       
@@ -543,18 +567,25 @@ class DataService {
     String? description,
     String contentType = 'LECTURE',
     int? weekNumber,
+    List<String>? attachments,
   }) async {
     try {
+      final Map<String, dynamic> body = {
+        'courseId': courseId,
+        'title': title,
+        'description': description,
+        'contentType': contentType,
+        'weekNumber': weekNumber,
+        if (attachments != null) 'attachments': attachments,
+      };
+      
+      // Remove nulls to satisfy backend validators
+      body.removeWhere((key, value) => value == null);
+
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/content'),
         headers: ApiConfig.authHeaders,
-        body: jsonEncode({
-          'courseId': courseId,
-          'title': title,
-          'description': description,
-          'contentType': contentType,
-          'weekNumber': weekNumber,
-        }),
+        body: jsonEncode(body),
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
@@ -570,18 +601,24 @@ class DataService {
     String? description,
     required DateTime dueDate,
     int maxPoints = 100,
+    List<String>? attachments,
   }) async {
     try {
+      final Map<String, dynamic> body = {
+        'courseId': courseId,
+        'title': title,
+        'description': description,
+        'dueDate': dueDate.toIso8601String(),
+        'points': maxPoints,
+        if (attachments != null) 'attachments': attachments,
+      };
+      
+      body.removeWhere((key, value) => value == null);
+
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/content/assignment'),
         headers: ApiConfig.authHeaders,
-        body: jsonEncode({
-          'courseId': courseId,
-          'title': title,
-          'description': description,
-          'dueDate': dueDate.toIso8601String(),
-          'maxPoints': maxPoints,
-        }),
+        body: jsonEncode(body),
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
@@ -597,18 +634,24 @@ class DataService {
     String? description,
     required DateTime examDate,
     int maxPoints = 100,
+    List<String>? attachments,
   }) async {
     try {
+      final Map<String, dynamic> body = {
+        'courseId': courseId,
+        'title': title,
+        'description': description,
+        'examDate': examDate.toIso8601String(),
+        'points': maxPoints,
+        if (attachments != null) 'attachments': attachments,
+      };
+      
+      body.removeWhere((key, value) => value == null);
+
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/content/exam'),
         headers: ApiConfig.authHeaders,
-        body: jsonEncode({
-          'courseId': courseId,
-          'title': title,
-          'description': description,
-          'examDate': examDate.toIso8601String(),
-          'maxPoints': maxPoints,
-        }),
+        body: jsonEncode(body),
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
@@ -625,36 +668,7 @@ class DataService {
   }
   
   static Task _parseTask(Map<String, dynamic> json) {
-    TaskPriority priority;
-    switch ((json['priority'] ?? 'MEDIUM').toString().toUpperCase()) {
-      case 'HIGH':
-      case 'URGENT':
-        priority = TaskPriority.high;
-        break;
-      case 'LOW':
-        priority = TaskPriority.low;
-        break;
-      default:
-        priority = TaskPriority.medium;
-    }
-    
-    return Task(
-      id: json['id'] ?? '',
-      title: json['title'] ?? '',
-      subject: json['course']?['name'] ?? json['courseName'] ?? 'General',
-      dueDate: json['dueDate'] != null 
-          ? DateTime.parse(json['dueDate'])
-          : DateTime.now().add(const Duration(days: 7)),
-      status: (json['status'] ?? 'PENDING') == 'COMPLETED' 
-          ? TaskStatus.completed 
-          : TaskStatus.pending,
-      priority: priority,
-      description: json['description'] ?? '',
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
-      type: json['taskType'] ?? json['type'] ?? 'PERSONAL',
-    );
+    return Task.fromJson(json);
   }
   
   static Announcement _parseAnnouncement(Map<String, dynamic> json) {

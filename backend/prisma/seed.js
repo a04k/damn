@@ -1,27 +1,51 @@
 /**
- * Database Seed Script
- * Egyptian Science Faculty Structure
+ * Database Seed Script - Real Egyptian Science Faculty Data
  * Run with: npm run prisma:seed
  */
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
 
 const prisma = new PrismaClient();
 
+// Load real course data from courses.json
+const coursesData = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../courses.json'), 'utf8')
+);
+
 async function main() {
-  console.log('🌱 Starting database seed...\n');
+  console.log('🌱 Starting database seed with REAL course data...\n');
+
+  // ============ CLEAN OLD DATA ============
+  console.log('🧹 Cleaning old data...');
+  
+  await prisma.taskSubmission.deleteMany({});
+  await prisma.task.deleteMany({});
+  await prisma.courseContent.deleteMany({});
+  await prisma.courseSchedule.deleteMany({});
+  await prisma.enrollment.deleteMany({});
+  await prisma.courseInstructor.deleteMany({});
+  await prisma.announcement.deleteMany({});
+  await prisma.scheduleEvent.deleteMany({});
+  await prisma.course.deleteMany({});
+  await prisma.programInstructor.deleteMany({});
+  await prisma.program.deleteMany({});
+  await prisma.user.deleteMany({});
+  await prisma.department.deleteMany({});
+  await prisma.faculty.deleteMany({});
+  
+  console.log('✅ Old data cleaned');
 
   // ============ CREATE FACULTY ============
   console.log('📁 Creating faculty...');
   
-  const scienceFaculty = await prisma.faculty.upsert({
-    where: { code: 'SCI' },
-    update: {},
-    create: {
+  const scienceFaculty = await prisma.faculty.create({
+    data: {
       code: 'SCI',
       name: 'Faculty of Science',
       nameAr: 'كلية العلوم',
-      description: 'Faculty of Science offering programs in Mathematics, Physics, Chemistry, and Biology'
+      description: 'Faculty of Science at Egyptian University'
     }
   });
 
@@ -30,634 +54,348 @@ async function main() {
   // ============ CREATE DEPARTMENTS ============
   console.log('🏢 Creating departments...');
 
-  const mathDept = await prisma.department.upsert({
-    where: { code: 'MATH' },
-    update: {},
-    create: {
-      code: 'MATH',
-      name: 'Mathematics Department',
-      nameAr: 'قسم الرياضيات',
-      description: 'Department of Mathematics offering Computer Science, Statistics, and Pure Mathematics programs',
-      facultyId: scienceFaculty.id
-    }
-  });
+  const departments = await prisma.$transaction([
+    prisma.department.create({
+      data: {
+        code: 'MATH', name: 'Mathematics Department',
+        nameAr: 'قسم الرياضيات', facultyId: scienceFaculty.id
+      }
+    }),
+    prisma.department.create({
+      data: {
+        code: 'PHYS', name: 'Physics Department',
+        nameAr: 'قسم الفيزياء', facultyId: scienceFaculty.id
+      }
+    }),
+    prisma.department.create({
+      data: {
+        code: 'CHEM', name: 'Chemistry Department',
+        nameAr: 'قسم الكيمياء', facultyId: scienceFaculty.id
+      }
+    }),
+    prisma.department.create({
+      data: {
+        code: 'BIO', name: 'Biology Department',
+        nameAr: 'قسم الأحياء', facultyId: scienceFaculty.id
+      }
+    }),
+    prisma.department.create({
+      data: {
+        code: 'GEOL', name: 'Geology Department',
+        nameAr: 'قسم الجيولوجيا', facultyId: scienceFaculty.id
+      }
+    }),
+    prisma.department.create({
+      data: {
+        code: 'UNIV', name: 'University Requirements',
+        nameAr: 'متطلبات الجامعة', facultyId: scienceFaculty.id
+      }
+    })
+  ]);
 
-  const bioDept = await prisma.department.upsert({
-    where: { code: 'BIO' },
-    update: {},
-    create: {
-      code: 'BIO',
-      name: 'Biology Department',
-      nameAr: 'قسم الأحياء',
-      description: 'Department of Biology offering Zoology, Botany, and Microbiology programs',
-      facultyId: scienceFaculty.id
-    }
-  });
-
-  const chemDept = await prisma.department.upsert({
-    where: { code: 'CHEM' },
-    update: {},
-    create: {
-      code: 'CHEM',
-      name: 'Chemistry Department',
-      nameAr: 'قسم الكيمياء',
-      description: 'Department of Chemistry offering Applied Chemistry and Biochemistry programs',
-      facultyId: scienceFaculty.id
-    }
-  });
-
-  const physDept = await prisma.department.upsert({
-    where: { code: 'PHYS' },
-    update: {},
-    create: {
-      code: 'PHYS',
-      name: 'Physics Department',
-      nameAr: 'قسم الفيزياء',
-      description: 'Department of Physics offering Biophysics, Electronics, and Pure Physics programs',
-      facultyId: scienceFaculty.id
-    }
-  });
+  const deptMap = {};
+  departments.forEach(d => deptMap[d.code] = d);
 
   console.log('✅ Departments created');
 
-  // ============ CREATE PROGRAMS (Specializations) ============
+  // ============ CREATE PROGRAMS ============
   console.log('📚 Creating programs...');
 
-  // Mathematics Department Programs
-  const csProgram = await prisma.program.upsert({
-    where: { code: 'CS' },
-    update: {},
-    create: {
-      code: 'CS',
-      name: 'Computer Science',
-      nameAr: 'علوم الحاسب',
-      description: 'Computer Science program focusing on programming, algorithms, and software development',
-      creditHours: 136,
-      departmentId: mathDept.id
-    }
-  });
+  const programs = await prisma.$transaction([
+    prisma.program.create({ data: { code: 'CS', name: 'Computer Science', nameAr: 'علوم الحاسب', creditHours: 136, departmentId: deptMap['MATH'].id } }),
+    prisma.program.create({ data: { code: 'STAT', name: 'Statistics', nameAr: 'الإحصاء', creditHours: 132, departmentId: deptMap['MATH'].id } }),
+    prisma.program.create({ data: { code: 'PMATH', name: 'Pure Mathematics', nameAr: 'الرياضيات البحتة', creditHours: 132, departmentId: deptMap['MATH'].id } }),
+    prisma.program.create({ data: { code: 'PHYS', name: 'Physics', nameAr: 'الفيزياء', creditHours: 136, departmentId: deptMap['PHYS'].id } }),
+    prisma.program.create({ data: { code: 'CHEM', name: 'Chemistry', nameAr: 'الكيمياء', creditHours: 132, departmentId: deptMap['CHEM'].id } }),
+    prisma.program.create({ data: { code: 'BOTA', name: 'Botany', nameAr: 'النبات', creditHours: 128, departmentId: deptMap['BIO'].id } }),
+    prisma.program.create({ data: { code: 'ZOOL', name: 'Zoology', nameAr: 'الحيوان', creditHours: 128, departmentId: deptMap['BIO'].id } }),
+    prisma.program.create({ data: { code: 'MICR', name: 'Microbiology', nameAr: 'الميكروبيولوجي', creditHours: 128, departmentId: deptMap['BIO'].id } }),
+    prisma.program.create({ data: { code: 'GEOL', name: 'Geology', nameAr: 'الجيولوجيا', creditHours: 132, departmentId: deptMap['GEOL'].id } })
+  ]);
 
-  const statsProgram = await prisma.program.upsert({
-    where: { code: 'STAT' },
-    update: {},
-    create: {
-      code: 'STAT',
-      name: 'Statistics',
-      nameAr: 'الإحصاء',
-      description: 'Statistics program focusing on probability, data analysis, and statistical methods',
-      creditHours: 132,
-      departmentId: mathDept.id
-    }
-  });
-
-  const pureMathProgram = await prisma.program.upsert({
-    where: { code: 'PMATH' },
-    update: {},
-    create: {
-      code: 'PMATH',
-      name: 'Pure Mathematics',
-      nameAr: 'الرياضيات البحتة',
-      description: 'Pure Mathematics program focusing on algebra, analysis, and topology',
-      creditHours: 132,
-      departmentId: mathDept.id
-    }
-  });
-
-  // Biology Department Programs
-  const zooProgram = await prisma.program.upsert({
-    where: { code: 'ZOO' },
-    update: {},
-    create: {
-      code: 'ZOO',
-      name: 'Zoology',
-      nameAr: 'الحيوان',
-      description: 'Zoology program focusing on animal biology, physiology, and evolution',
-      creditHours: 132,
-      departmentId: bioDept.id
-    }
-  });
-
-  const botProgram = await prisma.program.upsert({
-    where: { code: 'BOT' },
-    update: {},
-    create: {
-      code: 'BOT',
-      name: 'Botany',
-      nameAr: 'النبات',
-      description: 'Botany program focusing on plant biology, ecology, and genetics',
-      creditHours: 132,
-      departmentId: bioDept.id
-    }
-  });
-
-  const microProgram = await prisma.program.upsert({
-    where: { code: 'MICRO' },
-    update: {},
-    create: {
-      code: 'MICRO',
-      name: 'Microbiology',
-      nameAr: 'الميكروبيولوجي',
-      description: 'Microbiology program focusing on bacteria, viruses, and immunology',
-      creditHours: 136,
-      departmentId: bioDept.id
-    }
-  });
-
-  // Chemistry Department Programs
-  const appChemProgram = await prisma.program.upsert({
-    where: { code: 'ACHEM' },
-    update: {},
-    create: {
-      code: 'ACHEM',
-      name: 'Applied Chemistry',
-      nameAr: 'الكيمياء التطبيقية',
-      description: 'Applied Chemistry program focusing on industrial and environmental chemistry',
-      creditHours: 134,
-      departmentId: chemDept.id
-    }
-  });
-
-  const bioChemProgram = await prisma.program.upsert({
-    where: { code: 'BCHEM' },
-    update: {},
-    create: {
-      code: 'BCHEM',
-      name: 'Biochemistry',
-      nameAr: 'الكيمياء الحيوية',
-      description: 'Biochemistry program focusing on molecular biology and biochemical processes',
-      creditHours: 136,
-      departmentId: chemDept.id
-    }
-  });
+  const progMap = {};
+  programs.forEach(p => progMap[p.code] = p);
 
   console.log('✅ Programs created');
 
-  // ============ CREATE ADMIN USER ============
-  console.log('👤 Creating users...');
+  // ============ CREATE USERS ============
+  console.log('👥 Creating users...');
   
-  const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 12);
+  const hashedPassword = await bcrypt.hash('password123', 10);
   
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@college.edu' },
-    update: {},
-    create: {
+  // Admin
+  const admin = await prisma.user.create({
+    data: {
       email: 'admin@college.edu',
-      password: adminPassword,
-      name: 'System Administrator',
-      nameAr: 'مدير النظام',
+      password: hashedPassword,
+      name: 'System Admin',
       role: 'ADMIN',
-      isVerified: true,
-      isOnboardingComplete: true
+      isVerified: true, isOnboardingComplete: true
     }
   });
 
-  // ============ CREATE PROFESSORS ============
-  const professorPassword = await bcrypt.hash('professor123', 12);
+  // Professors
+  const professors = await prisma.$transaction([
+    prisma.user.create({
+      data: {
+        email: 'dr.ahmed@college.edu', password: hashedPassword, name: 'د. أحمد حسن',
+        role: 'PROFESSOR', departmentId: deptMap['MATH'].id, isVerified: true, isOnboardingComplete: true
+      }
+    }),
+    prisma.user.create({
+      data: {
+        email: 'dr.mohamed@college.edu', password: hashedPassword, name: 'د. محمد علي',
+        role: 'PROFESSOR', departmentId: deptMap['MATH'].id, isVerified: true, isOnboardingComplete: true
+      }
+    }),
+    prisma.user.create({
+      data: {
+        email: 'dr.fatma@college.edu', password: hashedPassword, name: 'د. فاطمة سالم',
+        role: 'PROFESSOR', departmentId: deptMap['PHYS'].id, isVerified: true, isOnboardingComplete: true
+      }
+    }),
+    prisma.user.create({
+      data: {
+        email: 'dr.khaled@college.edu', password: hashedPassword, name: 'د. خالد مصطفى',
+        role: 'PROFESSOR', departmentId: deptMap['CHEM'].id, isVerified: true, isOnboardingComplete: true
+      }
+    }),
+    prisma.user.create({
+      data: {
+        email: 'dr.rania@college.edu', password: hashedPassword, name: 'د. رانيا حسن',
+        role: 'PROFESSOR', departmentId: deptMap['BIO'].id, isVerified: true, isOnboardingComplete: true
+      }
+    }),
+    prisma.user.create({
+      data: {
+        email: 'dr.sami@college.edu', password: hashedPassword, name: 'د. سامي عثمان',
+        role: 'PROFESSOR', departmentId: deptMap['GEOL'].id, isVerified: true, isOnboardingComplete: true
+      }
+    })
+  ]);
 
-  // Math Department Professors
-  const drAhmed = await prisma.user.upsert({
-    where: { email: 'dr.ahmed@college.edu' },
-    update: {},
-    create: {
-      email: 'dr.ahmed@college.edu',
-      password: professorPassword,
-      name: 'Dr. Ahmed Hassan',
-      nameAr: 'د. أحمد حسن',
-      role: 'PROFESSOR',
-      departmentId: mathDept.id,
-      isVerified: true,
-      isOnboardingComplete: true
-    }
-  });
+  const profMap = {};
+  professors.forEach(p => profMap[p.email] = p);
 
-  const drMohamed = await prisma.user.upsert({
-    where: { email: 'dr.mohamed@college.edu' },
-    update: {},
-    create: {
-      email: 'dr.mohamed@college.edu',
-      password: professorPassword,
-      name: 'Dr. Mohamed Ali',
-      nameAr: 'د. محمد علي',
-      role: 'PROFESSOR',
-      departmentId: mathDept.id,
-      isVerified: true,
-      isOnboardingComplete: true
-    }
-  });
+  // Students
+  const students = await prisma.$transaction([
+    prisma.user.create({
+      data: {
+        email: 'student@college.edu', password: hashedPassword, name: 'أحمد محمد',
+        role: 'STUDENT', studentId: '2024001', level: 2,
+        programId: progMap['CS'].id, isVerified: true, isOnboardingComplete: true
+      }
+    }),
+    prisma.user.create({
+      data: {
+        email: 'sara@college.edu', password: hashedPassword, name: 'سارة أحمد',
+        role: 'STUDENT', studentId: '2024002', level: 3,
+        programId: progMap['STAT'].id, isVerified: true, isOnboardingComplete: true
+      }
+    }),
+    prisma.user.create({
+      data: {
+        email: 'omar@college.edu', password: hashedPassword, name: 'عمر حسن',
+        role: 'STUDENT', studentId: '2024003', level: 1,
+        programId: progMap['PHYS'].id, isVerified: true, isOnboardingComplete: true
+      }
+    })
+  ]);
 
-  // Biology Department Professor
-  const drSara = await prisma.user.upsert({
-    where: { email: 'dr.sara@college.edu' },
-    update: {},
-    create: {
-      email: 'dr.sara@college.edu',
-      password: professorPassword,
-      name: 'Dr. Sara Ibrahim',
-      nameAr: 'د. سارة إبراهيم',
-      role: 'PROFESSOR',
-      departmentId: bioDept.id,
-      isVerified: true,
-      isOnboardingComplete: true
-    }
-  });
+  const studentMap = {};
+  students.forEach(s => studentMap[s.email] = s);
 
-  // Chemistry Department Professor
-  const drKhalid = await prisma.user.upsert({
-    where: { email: 'dr.khalid@college.edu' },
-    update: {},
-    create: {
-      email: 'dr.khalid@college.edu',
-      password: professorPassword,
-      name: 'Dr. Khalid Mahmoud',
-      nameAr: 'د. خالد محمود',
-      role: 'PROFESSOR',
-      departmentId: chemDept.id,
-      isVerified: true,
-      isOnboardingComplete: true
-    }
-  });
+  console.log('✅ Users created');
 
-  console.log('✅ Professors created');
+  // ============ CREATE COURSES FROM courses.json ============
+  console.log('📚 Creating courses from courses.json...');
 
-  // ============ ASSIGN PROFESSORS TO PROGRAMS ============
-  console.log('👨‍🏫 Assigning professors to programs...');
+  function mapDepartment(deptName) {
+    if (deptName === 'Mathematics') return deptMap['MATH'].id;
+    if (deptName === 'Physics') return deptMap['PHYS'].id;
+    if (deptName === 'Chemistry') return deptMap['CHEM'].id;
+    if (deptName === 'Botany' || deptName === 'Zoology' || deptName === 'Microbiology') return deptMap['BIO'].id;
+    if (deptName === 'Geology') return deptMap['GEOL'].id;
+    return deptMap['UNIV'].id;
+  }
 
-  // Dr. Ahmed can teach in CS and Statistics programs
-  await prisma.programInstructor.upsert({
-    where: { professorId_programId: { professorId: drAhmed.id, programId: csProgram.id } },
-    update: {},
-    create: { professorId: drAhmed.id, programId: csProgram.id }
-  });
-  await prisma.programInstructor.upsert({
-    where: { professorId_programId: { professorId: drAhmed.id, programId: statsProgram.id } },
-    update: {},
-    create: { professorId: drAhmed.id, programId: statsProgram.id }
-  });
+  function mapCategory(code) {
+    if (code.startsWith('COMP')) return 'COMP';
+    if (code.startsWith('MATH')) return 'MATH';
+    if (code.startsWith('STAT')) return 'MATH';
+    if (code.startsWith('PHYS')) return 'PHYS';
+    if (code.startsWith('CHEM')) return 'CHEM';
+    if (code.startsWith('BIO') || code.startsWith('ZOOL') || code.startsWith('BOTA') || code.startsWith('MICR')) return 'BIO';
+    if (code.startsWith('GEOL')) return 'GENERAL';
+    return 'GENERAL';
+  }
 
-  // Dr. Mohamed can teach in CS and Pure Math programs
-  await prisma.programInstructor.upsert({
-    where: { professorId_programId: { professorId: drMohamed.id, programId: csProgram.id } },
-    update: {},
-    create: { professorId: drMohamed.id, programId: csProgram.id }
-  });
-  await prisma.programInstructor.upsert({
-    where: { professorId_programId: { professorId: drMohamed.id, programId: pureMathProgram.id } },
-    update: {},
-    create: { professorId: drMohamed.id, programId: pureMathProgram.id }
-  });
+  // Create all courses
+  const createdCourses = [];
+  for (const c of coursesData.courses) {
+    const course = await prisma.course.create({
+      data: {
+        code: c.course_code.replace(' ', ''),
+        name: c.course_title.split('(')[1]?.replace(')', '').trim() || c.course_title,
+        nameAr: c.course_title.split('(')[0].trim(),
+        description: `${c.course_title} - ${c.credit_hours} credit hours`,
+        category: mapCategory(c.course_code),
+        creditHours: c.credit_hours,
+        semester: 'FALL',
+        academicYear: '2024-2025',
+        isActive: true,
+        departmentId: mapDepartment(c.department)
+      }
+    });
+    createdCourses.push(course);
+  }
 
-  // Dr. Sara can teach in Zoology and Microbiology
-  await prisma.programInstructor.upsert({
-    where: { professorId_programId: { professorId: drSara.id, programId: zooProgram.id } },
-    update: {},
-    create: { professorId: drSara.id, programId: zooProgram.id }
-  });
-  await prisma.programInstructor.upsert({
-    where: { professorId_programId: { professorId: drSara.id, programId: microProgram.id } },
-    update: {},
-    create: { professorId: drSara.id, programId: microProgram.id }
-  });
+  console.log(`✅ Created ${createdCourses.length} courses`);
 
-  // Dr. Khalid can teach in Applied Chemistry and Biochemistry
-  await prisma.programInstructor.upsert({
-    where: { professorId_programId: { professorId: drKhalid.id, programId: appChemProgram.id } },
-    update: {},
-    create: { professorId: drKhalid.id, programId: appChemProgram.id }
-  });
-  await prisma.programInstructor.upsert({
-    where: { professorId_programId: { professorId: drKhalid.id, programId: bioChemProgram.id } },
-    update: {},
-    create: { professorId: drKhalid.id, programId: bioChemProgram.id }
-  });
+  // ============ ASSIGN PROFESSORS TO COURSES ============
+  console.log('👨‍🏫 Assigning professors to courses...');
 
-  console.log('✅ Professors assigned to programs');
+  // Assign CS & COMP courses to Dr. Ahmed
+  const csCourses = createdCourses.filter(c => c.code.startsWith('COMP') || c.code.startsWith('MATH'));
+  for (let i = 0; i < Math.min(10, csCourses.length); i++) {
+    await prisma.courseInstructor.create({
+      data: {
+        userId: professors[i % 2 === 0 ? 0 : 1].id,
+        courseId: csCourses[i].id,
+        isPrimary: true
+      }
+    });
+  }
 
-  // ============ CREATE STUDENTS ============
-  const studentPassword = await bcrypt.hash('student123', 12);
+  // Assign STAT courses to Dr. Mohamed
+  const statCourses = createdCourses.filter(c => c.code.startsWith('STAT'));
+  for (const course of statCourses) {
+    await prisma.courseInstructor.create({
+      data: { userId: professors[1].id, courseId: course.id, isPrimary: true }
+    });
+  }
 
-  const student1 = await prisma.user.upsert({
-    where: { email: 'student@college.edu' },
-    update: { departmentId: mathDept.id },
-    create: {
-      email: 'student@college.edu',
-      password: studentPassword,
-      name: 'Ahmed Mohamed',
-      nameAr: 'أحمد محمد',
-      role: 'STUDENT',
-      studentId: '20250001',
-      programId: csProgram.id,
-      departmentId: mathDept.id,
-      level: 3,
-      gpa: 3.45,
-      isVerified: true,
-      isOnboardingComplete: true
-    }
-  });
+  // Assign PHYS courses to Dr. Fatma
+  const physCourses = createdCourses.filter(c => c.code.startsWith('PHYS'));
+  for (const course of physCourses) {
+    await prisma.courseInstructor.create({
+      data: { userId: professors[2].id, courseId: course.id, isPrimary: true }
+    });
+  }
 
-  const student2 = await prisma.user.upsert({
-    where: { email: 'mona@college.edu' },
-    update: { departmentId: mathDept.id },
-    create: {
-      email: 'mona@college.edu',
-      password: studentPassword,
-      name: 'Mona Ali',
-      nameAr: 'منى علي',
-      role: 'STUDENT',
-      studentId: '20250002',
-      programId: csProgram.id,
-      departmentId: mathDept.id,
-      level: 2,
-      gpa: 3.78,
-      isVerified: true,
-      isOnboardingComplete: true
-    }
-  });
+  // Assign CHEM courses to Dr. Khaled
+  const chemCourses = createdCourses.filter(c => c.code.startsWith('CHEM'));
+  for (const course of chemCourses) {
+    await prisma.courseInstructor.create({
+      data: { userId: professors[3].id, courseId: course.id, isPrimary: true }
+    });
+  }
 
-  const student3 = await prisma.user.upsert({
-    where: { email: 'omar@college.edu' },
-    update: { departmentId: mathDept.id },
-    create: {
-      email: 'omar@college.edu',
-      password: studentPassword,
-      name: 'Omar Khaled',
-      nameAr: 'عمر خالد',
-      role: 'STUDENT',
-      studentId: '20250003',
-      programId: statsProgram.id,
-      departmentId: mathDept.id,
-      level: 4,
-      gpa: 3.12,
-      isVerified: true,
-      isOnboardingComplete: true
-    }
-  });
+  // Assign BIO courses to Dr. Rania (professors[4])
+  const bioCourses = createdCourses.filter(c => c.category === 'BIO');
+  for (const course of bioCourses) {
+    await prisma.courseInstructor.create({
+      data: { userId: professors[4].id, courseId: course.id, isPrimary: true }
+    });
+  }
 
-  console.log('✅ Students created');
+  // Assign GEOL courses to Dr. Sami (professors[5])
+  const geolCourses = createdCourses.filter(c => c.code.startsWith('GEOL'));
+  for (const course of geolCourses) {
+    await prisma.courseInstructor.create({
+      data: { userId: professors[5].id, courseId: course.id, isPrimary: true }
+    });
+  }
 
-  // ============ CREATE COURSES ============
-  console.log('📖 Creating courses...');
-
-  const cs101 = await prisma.course.upsert({
-    where: { code: 'CS101' },
-    update: {},
-    create: {
-      code: 'CS101',
-      name: 'Introduction to Programming',
-      nameAr: 'مقدمة في البرمجة',
-      description: 'Learn programming fundamentals using Python',
-      category: 'COMP',
-      creditHours: 3,
-      departmentId: mathDept.id,
-      programId: csProgram.id,
-      semester: 'Fall',
-      academicYear: '2024-2025'
-    }
-  });
-
-  const cs201 = await prisma.course.upsert({
-    where: { code: 'CS201' },
-    update: {},
-    create: {
-      code: 'CS201',
-      name: 'Data Structures & Algorithms',
-      nameAr: 'هياكل البيانات والخوارزميات',
-      description: 'Study of fundamental data structures and algorithms',
-      category: 'COMP',
-      creditHours: 3,
-      departmentId: mathDept.id,
-      programId: csProgram.id,
-      semester: 'Fall',
-      academicYear: '2024-2025'
-    }
-  });
-
-  const cs301 = await prisma.course.upsert({
-    where: { code: 'CS301' },
-    update: {},
-    create: {
-      code: 'CS301',
-      name: 'Database Systems',
-      nameAr: 'نظم قواعد البيانات',
-      description: 'Introduction to database design and SQL',
-      category: 'COMP',
-      creditHours: 3,
-      departmentId: mathDept.id,
-      programId: csProgram.id,
-      semester: 'Fall',
-      academicYear: '2024-2025'
-    }
-  });
-
-  const math101 = await prisma.course.upsert({
-    where: { code: 'MATH101' },
-    update: {},
-    create: {
-      code: 'MATH101',
-      name: 'Calculus I',
-      nameAr: 'التفاضل والتكامل ١',
-      description: 'Introduction to differential calculus',
-      category: 'MATH',
-      creditHours: 4,
-      departmentId: mathDept.id,
-      semester: 'Fall',
-      academicYear: '2024-2025'
-    }
-  });
-
-  const stat201 = await prisma.course.upsert({
-    where: { code: 'STAT201' },
-    update: {},
-    create: {
-      code: 'STAT201',
-      name: 'Probability Theory',
-      nameAr: 'نظرية الاحتمالات',
-      description: 'Introduction to probability and random variables',
-      category: 'MATH',
-      creditHours: 3,
-      departmentId: mathDept.id,
-      programId: statsProgram.id,
-      semester: 'Fall',
-      academicYear: '2024-2025'
-    }
-  });
-
-  const cs402 = await prisma.course.upsert({
-    where: { code: 'CS402' },
-    update: {},
-    create: {
-      code: 'CS402',
-      name: 'Mobile Application Development',
-      nameAr: 'تطوير تطبيقات الموبايل',
-      description: 'Mobile app development using Flutter',
-      category: 'COMP',
-      creditHours: 3,
-      departmentId: mathDept.id,
-      programId: csProgram.id,
-      semester: 'Fall',
-      academicYear: '2024-2025'
-    }
-  });
-
-  console.log('✅ Courses created');
-
-  // ============ ASSIGN INSTRUCTORS TO COURSES ============
-  console.log('👨‍🏫 Assigning instructors to courses...');
-
-  await prisma.courseInstructor.upsert({
-    where: { userId_courseId: { userId: drAhmed.id, courseId: cs101.id } },
-    update: {},
-    create: { userId: drAhmed.id, courseId: cs101.id, isPrimary: true }
-  });
-
-  await prisma.courseInstructor.upsert({
-    where: { userId_courseId: { userId: drAhmed.id, courseId: cs201.id } },
-    update: {},
-    create: { userId: drAhmed.id, courseId: cs201.id, isPrimary: true }
-  });
-
-  await prisma.courseInstructor.upsert({
-    where: { userId_courseId: { userId: drMohamed.id, courseId: cs301.id } },
-    update: {},
-    create: { userId: drMohamed.id, courseId: cs301.id, isPrimary: true }
-  });
-
-  await prisma.courseInstructor.upsert({
-    where: { userId_courseId: { userId: drMohamed.id, courseId: math101.id } },
-    update: {},
-    create: { userId: drMohamed.id, courseId: math101.id, isPrimary: true }
-  });
-
-  await prisma.courseInstructor.upsert({
-    where: { userId_courseId: { userId: drAhmed.id, courseId: stat201.id } },
-    update: {},
-    create: { userId: drAhmed.id, courseId: stat201.id, isPrimary: true }
-  });
-
-  await prisma.courseInstructor.upsert({
-    where: { userId_courseId: { userId: drAhmed.id, courseId: cs402.id } },
-    update: {},
-    create: { userId: drAhmed.id, courseId: cs402.id, isPrimary: true }
-  });
-
-  console.log('✅ Instructors assigned to courses');
+  console.log('✅ Professors assigned to courses');
 
   // ============ ENROLL STUDENTS ============
-  console.log('📝 Enrolling students...');
+  console.log('📝 Enrolling students in courses...');
 
-  await prisma.enrollment.upsert({
-    where: { userId_courseId: { userId: student1.id, courseId: cs101.id } },
-    update: {},
-    create: { userId: student1.id, courseId: cs101.id }
-  });
+  // Student 1: CS student - enroll in COMP and MATH courses
+  const student1Courses = createdCourses.filter(c => 
+    c.code.startsWith('COMP') || c.code === 'MATH101' || c.code === 'MATH102' || c.code === 'STAT101'
+  ).slice(0, 6);
+  
+  for (const course of student1Courses) {
+    await prisma.enrollment.create({
+      data: { userId: students[0].id, courseId: course.id, status: 'ENROLLED' }
+    });
+  }
 
-  await prisma.enrollment.upsert({
-    where: { userId_courseId: { userId: student1.id, courseId: cs201.id } },
-    update: {},
-    create: { userId: student1.id, courseId: cs201.id }
-  });
+  // Student 2: Stats student
+  const student2Courses = createdCourses.filter(c => 
+    c.code.startsWith('STAT') || c.code === 'MATH101' || c.code === 'MATH203'
+  ).slice(0, 5);
+  
+  for (const course of student2Courses) {
+    await prisma.enrollment.create({
+      data: { userId: students[1].id, courseId: course.id, status: 'ENROLLED' }
+    });
+  }
 
-  await prisma.enrollment.upsert({
-    where: { userId_courseId: { userId: student1.id, courseId: math101.id } },
-    update: {},
-    create: { userId: student1.id, courseId: math101.id }
-  });
-
-  await prisma.enrollment.upsert({
-    where: { userId_courseId: { userId: student2.id, courseId: cs101.id } },
-    update: {},
-    create: { userId: student2.id, courseId: cs101.id }
-  });
-
-  await prisma.enrollment.upsert({
-    where: { userId_courseId: { userId: student2.id, courseId: cs301.id } },
-    update: {},
-    create: { userId: student2.id, courseId: cs301.id }
-  });
-
-  await prisma.enrollment.upsert({
-    where: { userId_courseId: { userId: student3.id, courseId: stat201.id } },
-    update: {},
-    create: { userId: student3.id, courseId: stat201.id }
-  });
-
-  await prisma.enrollment.upsert({
-    where: { userId_courseId: { userId: student3.id, courseId: math101.id } },
-    update: {},
-    create: { userId: student3.id, courseId: math101.id }
-  });
+  // Student 3: Physics student
+  const student3Courses = createdCourses.filter(c => 
+    c.code.startsWith('PHYS') || c.code === 'MATH101' || c.code === 'CHEM101'
+  ).slice(0, 5);
+  
+  for (const course of student3Courses) {
+    await prisma.enrollment.create({
+      data: { userId: students[2].id, courseId: course.id, status: 'ENROLLED' }
+    });
+  }
 
   console.log('✅ Students enrolled');
 
-  // ============ ADD COURSE SCHEDULES ============
-  console.log('📅 Adding course schedules...');
+  // ============ CREATE COURSE SCHEDULES ============
+  console.log('📅 Creating course schedules...');
 
-  const schedules = [
-    { courseId: cs101.id, dayOfWeek: 'SUNDAY', startTime: '09:00', endTime: '10:30', location: 'Building A', room: 'Room 101' },
-    { courseId: cs101.id, dayOfWeek: 'TUESDAY', startTime: '09:00', endTime: '10:30', location: 'Building A', room: 'Room 101' },
-    { courseId: cs201.id, dayOfWeek: 'SUNDAY', startTime: '11:00', endTime: '12:30', location: 'Building A', room: 'Room 201' },
-    { courseId: cs201.id, dayOfWeek: 'WEDNESDAY', startTime: '11:00', endTime: '12:30', location: 'Building A', room: 'Room 201' },
-    { courseId: cs301.id, dayOfWeek: 'MONDAY', startTime: '09:00', endTime: '10:30', location: 'Lab Building', room: 'Lab 301' },
-    { courseId: cs301.id, dayOfWeek: 'THURSDAY', startTime: '09:00', endTime: '10:30', location: 'Lab Building', room: 'Lab 301' },
-    { courseId: math101.id, dayOfWeek: 'MONDAY', startTime: '14:00', endTime: '15:30', location: 'Building B', room: 'Room 102' },
-    { courseId: math101.id, dayOfWeek: 'WEDNESDAY', startTime: '14:00', endTime: '15:30', location: 'Building B', room: 'Room 102' },
-    { courseId: stat201.id, dayOfWeek: 'TUESDAY', startTime: '14:00', endTime: '15:30', location: 'Building B', room: 'Room 105' },
-    { courseId: cs402.id, dayOfWeek: 'THURSDAY', startTime: '14:00', endTime: '16:00', location: 'Lab Building', room: 'Mobile Lab' }
+  const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY'];
+  const times = [
+    { start: '08:00', end: '09:30' },
+    { start: '09:45', end: '11:15' },
+    { start: '11:30', end: '13:00' },
+    { start: '14:00', end: '15:30' },
+    { start: '15:45', end: '17:15' }
   ];
+  const locations = ['Building A', 'Building B', 'Labs Building', 'Main Hall'];
 
-  for (const schedule of schedules) {
-    await prisma.courseSchedule.create({ data: schedule });
+  // Create schedules for enrolled courses
+  const enrolledCourseIds = [...student1Courses, ...student2Courses, ...student3Courses]
+    .map(c => c.id)
+    .filter((v, i, a) => a.indexOf(v) === i);
+
+  for (let i = 0; i < enrolledCourseIds.length; i++) {
+    const course = createdCourses.find(c => c.id === enrolledCourseIds[i]);
+    if (!course) continue;
+
+    // 2 sessions per course
+    await prisma.courseSchedule.create({
+      data: {
+        courseId: course.id,
+        dayOfWeek: days[i % days.length],
+        startTime: times[i % times.length].start,
+        endTime: times[i % times.length].end,
+        location: locations[i % locations.length],
+        room: `Room ${100 + i}`
+      }
+    });
+
+    await prisma.courseSchedule.create({
+      data: {
+        courseId: course.id,
+        dayOfWeek: days[(i + 2) % days.length],
+        startTime: times[(i + 1) % times.length].start,
+        endTime: times[(i + 1) % times.length].end,
+        location: locations[i % locations.length],
+        room: `Room ${100 + i}`
+      }
+    });
   }
 
-  console.log('✅ Course schedules added');
+  console.log('✅ Course schedules created');
 
-  // ============ ADD SAMPLE CONTENT ============
-  console.log('📄 Adding sample content...');
-
-  await prisma.courseContent.createMany({
-    data: [
-      {
-        courseId: cs101.id,
-        title: 'Week 1: Introduction to Python',
-        description: 'Setting up Python, writing your first program, basic syntax',
-        contentType: 'LECTURE',
-        weekNumber: 1,
-        orderIndex: 1,
-        createdById: drAhmed.id
-      },
-      {
-        courseId: cs101.id,
-        title: 'Week 2: Variables and Data Types',
-        description: 'Strings, numbers, booleans, type conversion',
-        contentType: 'LECTURE',
-        weekNumber: 2,
-        orderIndex: 1,
-        createdById: drAhmed.id
-      },
-      {
-        courseId: cs201.id,
-        title: 'Week 1: Arrays and Big O',
-        description: 'Arrays, complexity analysis, Big O notation',
-        contentType: 'LECTURE',
-        weekNumber: 1,
-        orderIndex: 1,
-        createdById: drAhmed.id
-      },
-      {
-        courseId: cs301.id,
-        title: 'Week 1: Introduction to Databases',
-        description: 'What is a database, DBMS, relational model',
-        contentType: 'LECTURE',
-        weekNumber: 1,
-        orderIndex: 1,
-        createdById: drMohamed.id
-      }
-    ],
-    skipDuplicates: true
-  });
-
-  console.log('✅ Content added');
-
-  // ============ CREATE SAMPLE TASKS ============
+  // ============ CREATE TASKS ============
   console.log('📋 Creating tasks...');
 
   const nextWeek = new Date();
@@ -666,135 +404,148 @@ async function main() {
   const twoWeeks = new Date();
   twoWeeks.setDate(twoWeeks.getDate() + 14);
 
-  const task1 = await prisma.task.create({
-    data: {
-      title: 'Assignment 1: Hello World',
-      description: 'Write a Python program that prints your name and student ID',
-      taskType: 'ASSIGNMENT',
-      priority: 'MEDIUM',
-      dueDate: nextWeek,
-      maxPoints: 50,
-      courseId: cs101.id,
-      createdById: drAhmed.id
-    }
-  });
+  const threeWeeks = new Date();
+  threeWeeks.setDate(threeWeeks.getDate() + 21);
 
-  await prisma.task.create({
-    data: {
-      title: 'Midterm Exam',
-      description: 'Covers weeks 1-7: Variables, Control Flow, Functions, Lists',
-      taskType: 'EXAM',
-      priority: 'HIGH',
-      dueDate: twoWeeks,
-      startDate: twoWeeks,
-      maxPoints: 100,
-      courseId: cs101.id,
-      createdById: drAhmed.id
-    }
-  });
+  // Get first few courses with instructors
+  const comp102 = createdCourses.find(c => c.code === 'COMP102');
+  const comp104 = createdCourses.find(c => c.code === 'COMP104');
+  const math101 = createdCourses.find(c => c.code === 'MATH101');
+  const stat101 = createdCourses.find(c => c.code === 'STAT101');
 
-  await prisma.task.create({
-    data: {
-      title: 'Lab Exercise: Linked Lists',
-      description: 'Implement a singly linked list with insert, delete, and search',
-      taskType: 'LAB',
-      priority: 'MEDIUM',
-      dueDate: nextWeek,
-      maxPoints: 30,
-      courseId: cs201.id,
-      createdById: drAhmed.id
-    }
-  });
+  if (comp102) {
+    await prisma.task.create({
+      data: {
+        title: 'Python Programming Lab',
+        description: 'Complete exercises 1-5 from Chapter 3',
+        taskType: 'LAB',
+        priority: 'MEDIUM',
+        dueDate: nextWeek,
+        maxPoints: 20,
+        courseId: comp102.id,
+        createdById: professors[0].id
+      }
+    });
+  }
 
-  // Create task submissions for students
-  await prisma.taskSubmission.create({
-    data: { taskId: task1.id, studentId: student1.id, status: 'PENDING' }
-  });
-  await prisma.taskSubmission.create({
-    data: { taskId: task1.id, studentId: student2.id, status: 'PENDING' }
-  });
+  if (comp104) {
+    await prisma.task.create({
+      data: {
+        title: 'Midterm Exam - Programming 1',
+        description: 'Covers: Variables, Loops, Functions, Arrays',
+        taskType: 'EXAM',
+        priority: 'HIGH',
+        dueDate: twoWeeks,
+        startDate: twoWeeks,
+        maxPoints: 100,
+        courseId: comp104.id,
+        createdById: professors[0].id
+      }
+    });
+
+    await prisma.task.create({
+      data: {
+        title: 'Assignment 1: Calculator Program',
+        description: 'Build a simple calculator using Python',
+        taskType: 'ASSIGNMENT',
+        priority: 'MEDIUM',
+        dueDate: nextWeek,
+        maxPoints: 30,
+        courseId: comp104.id,
+        createdById: professors[0].id
+      }
+    });
+  }
+
+  if (math101) {
+    await prisma.task.create({
+      data: {
+        title: 'Calculus Problem Set 1',
+        description: 'Problems from Chapter 2: Derivatives',
+        taskType: 'ASSIGNMENT',
+        priority: 'MEDIUM',
+        dueDate: nextWeek,
+        maxPoints: 25,
+        courseId: math101.id,
+        createdById: professors[1].id
+      }
+    });
+
+    await prisma.task.create({
+      data: {
+        title: 'Quiz 1: Limits',
+        description: 'Short quiz on limits and continuity',
+        taskType: 'QUIZ',
+        priority: 'MEDIUM',
+        dueDate: threeWeeks,
+        maxPoints: 15,
+        courseId: math101.id,
+        createdById: professors[1].id
+      }
+    });
+  }
+
+  if (stat101) {
+    await prisma.task.create({
+      data: {
+        title: 'Statistics Lab Report',
+        description: 'Data analysis using SPSS or R',
+        taskType: 'LAB',
+        priority: 'MEDIUM',
+        dueDate: twoWeeks,
+        maxPoints: 40,
+        courseId: stat101.id,
+        createdById: professors[1].id
+      }
+    });
+  }
 
   console.log('✅ Tasks created');
 
   // ============ CREATE ANNOUNCEMENTS ============
   console.log('📢 Creating announcements...');
 
-  await prisma.announcement.createMany({
-    data: [
-      {
-        title: 'Welcome to Fall 2024!',
-        message: 'Welcome to the new semester. Check your schedules and course materials.',
-        type: 'GENERAL',
-        isPinned: true,
-        createdById: admin.id
-      },
-      {
-        title: 'Office Hours Update',
-        message: 'My office hours are now Sundays and Tuesdays 2-4 PM',
-        type: 'GENERAL',
-        courseId: cs101.id,
-        createdById: drAhmed.id
-      },
-      {
-        title: 'Lab Assignment Due',
-        message: 'Remember to submit your lab assignment by next Thursday',
-        type: 'ASSIGNMENT',
-        courseId: cs201.id,
-        createdById: drAhmed.id
-      }
-    ],
-    skipDuplicates: true
+  await prisma.announcement.create({
+    data: {
+      title: 'مرحباً بكم في الفصل الدراسي الجديد',
+      message: 'نتمنى لكم فصلاً دراسياً موفقاً. يرجى مراجعة الجداول الدراسية.',
+      type: 'GENERAL',
+      isPinned: true,
+      createdById: admin.id
+    }
   });
 
   console.log('✅ Announcements created');
 
   // ============ SUMMARY ============
-  console.log('\n' + '═'.repeat(60));
-  console.log('✨ DATABASE SEEDING COMPLETED SUCCESSFULLY!');
-  console.log('═'.repeat(60));
-  console.log('\n📊 Summary:');
-  console.log(`   • ${await prisma.faculty.count()} Faculty`);
-  console.log(`   • ${await prisma.department.count()} Departments`);
-  console.log(`   • ${await prisma.program.count()} Programs (Specializations)`);
-  console.log(`   • ${await prisma.user.count()} Users`);
-  console.log(`   • ${await prisma.course.count()} Courses`);
-  console.log(`   • ${await prisma.enrollment.count()} Enrollments`);
-  console.log(`   • ${await prisma.task.count()} Tasks`);
-  
-  console.log('\n🔐 TEST ACCOUNTS:');
-  console.log('─'.repeat(60));
-  console.log('│ Role      │ Email                    │ Password      │');
-  console.log('─'.repeat(60));
-  console.log('│ Admin     │ admin@college.edu        │ admin123      │');
-  console.log('│ Professor │ dr.ahmed@college.edu     │ professor123  │');
-  console.log('│ Professor │ dr.mohamed@college.edu   │ professor123  │');
-  console.log('│ Professor │ dr.sara@college.edu      │ professor123  │');
-  console.log('│ Professor │ dr.khalid@college.edu    │ professor123  │');
-  console.log('│ Student   │ student@college.edu      │ student123    │');
-  console.log('│ Student   │ mona@college.edu         │ student123    │');
-  console.log('│ Student   │ omar@college.edu         │ student123    │');
-  console.log('─'.repeat(60));
-  console.log('\n📁 Structure:');
-  console.log('   Faculty of Science');
-  console.log('   ├── Mathematics Department');
-  console.log('   │   ├── Computer Science Program (Dr. Ahmed, Dr. Mohamed)');
-  console.log('   │   ├── Statistics Program (Dr. Ahmed)');
-  console.log('   │   └── Pure Mathematics Program (Dr. Mohamed)');
-  console.log('   ├── Biology Department');
-  console.log('   │   ├── Zoology Program (Dr. Sara)');
-  console.log('   │   ├── Botany Program');
-  console.log('   │   └── Microbiology Program (Dr. Sara)');
-  console.log('   ├── Chemistry Department');
-  console.log('   │   ├── Applied Chemistry Program (Dr. Khalid)');
-  console.log('   │   └── Biochemistry Program (Dr. Khalid)');
-  console.log('   └── Physics Department\n');
+  console.log('\n========================================');
+  console.log('🎉 Database seeded successfully!');
+  console.log('========================================\n');
+  console.log('📊 Summary:');
+  console.log(`   • Courses: ${createdCourses.length}`);
+  console.log(`   • Professors: ${professors.length}`);
+  console.log(`   • Students: ${students.length}`);
+  console.log('\n👤 Test Accounts (password: password123):');
+  console.log('   Students:');
+  console.log('   • student@college.edu (CS student)');
+  console.log('   • sara@college.edu (Stats student)');
+  console.log('   • omar@college.edu (Physics student)');
+  console.log('   Professors:');
+  console.log('   • dr.ahmed@college.edu (Math/CS)');
+  console.log('   • dr.mohamed@college.edu (Math/Stats)');
+  console.log('   • dr.fatma@college.edu (Physics)');
+  console.log('   • dr.khaled@college.edu (Chemistry)');
+  console.log('   Admin:');
+  console.log('   • admin@college.edu');
+  console.log('========================================\n');
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Seed error:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
+  .then(async () => {
     await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error('❌ Seed error:', e);
+    await prisma.$disconnect();
+    process.exit(1);
   });

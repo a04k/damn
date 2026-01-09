@@ -60,7 +60,7 @@ class AdaptiveDashboard extends ConsumerWidget {
           ),
         ),
       ),
-      error: (error, _) => HomeScreen(), // Fallback to home screen on error
+      error: (error, _) => const HomeScreen(), // Fallback to home screen on error
     );
   }
 }

@@ -23,12 +23,13 @@ router.post('/',
     body('contentType').isIn(['LECTURE', 'MATERIAL', 'VIDEO', 'DOCUMENT', 'LINK']),
     body('description').optional().isString(),
     body('fileUrl').optional().isString(),
+    body('attachments').optional().isArray(),
     body('weekNumber').optional().isInt({ min: 1 }),
     validate
   ],
   async (req, res, next) => {
     try {
-      const { courseId, title, description, contentType, fileUrl, weekNumber } = req.body;
+      const { courseId, title, description, contentType, fileUrl, weekNumber, attachments } = req.body;
 
       // Verify professor teaches this course
       const isInstructor = await prisma.courseInstructor.findFirst({
@@ -58,6 +59,7 @@ router.post('/',
           description,
           contentType,
           fileUrl,
+          attachments,
           weekNumber,
           orderIndex,
           createdById: req.user.id
@@ -120,11 +122,12 @@ router.post('/assignment',
     body('description').optional().isString(),
     body('dueDate').isISO8601(),
     body('points').optional().isInt({ min: 0 }).default(100),
+    body('attachments').optional().isArray(),
     validate
   ],
   async (req, res, next) => {
     try {
-      const { courseId, title, description, dueDate, points = 100 } = req.body;
+      const { courseId, title, description, dueDate, points = 100, attachments } = req.body;
 
       // Verify instructor
       const isInstructor = await prisma.courseInstructor.findFirst({
@@ -153,7 +156,8 @@ router.post('/assignment',
           taskType: 'ASSIGNMENT',
           priority: 'MEDIUM',
           dueDate: new Date(dueDate),
-          points,
+          maxPoints: points,
+          attachments,
           courseId,
           createdById: req.user.id
         }
@@ -190,7 +194,7 @@ router.post('/assignment',
           id: task.id,
           title: task.title,
           dueDate: task.dueDate,
-          points: task.points
+          maxPoints: task.maxPoints
         }
       });
     } catch (error) {
@@ -243,7 +247,7 @@ router.post('/exam',
           taskType: 'EXAM',
           priority: 'HIGH',
           dueDate: new Date(examDate),
-          points,
+          maxPoints: points,
           courseId,
           createdById: req.user.id
         }
@@ -280,7 +284,7 @@ router.post('/exam',
           id: task.id,
           title: task.title,
           examDate: task.dueDate,
-          points: task.points
+          maxPoints: task.maxPoints
         }
       });
     } catch (error) {

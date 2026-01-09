@@ -22,8 +22,10 @@ const formatUserResponse = (user) => ({
   role: user.role.toLowerCase(),
   studentId: user.studentId,
   major: user.major,
-  department: user.department,
-  program: user.program,
+  department: user.department?.name,
+  departmentId: user.departmentId,
+  program: user.program?.name,
+  programId: user.programId,
   gpa: user.gpa,
   level: user.level,
   isVerified: user.isVerified,
@@ -31,6 +33,115 @@ const formatUserResponse = (user) => ({
   enrolledCourses: user.enrollments?.map(e => e.courseId) || [],
   mode: user.role === 'PROFESSOR' ? 'professor' : 'student'
 });
+
+// ============ GET DEPARTMENTS (METADATA) ============
+
+router.get('/metadata/departments',
+  async (req, res, next) => {
+    try {
+      const departments = await prisma.department.findMany({
+        include: {
+          programs: {
+            orderBy: { name: 'asc' }
+          }
+        },
+        orderBy: { name: 'asc' }
+      });
+
+      res.json({
+        success: true,
+        departments: departments.map(d => ({
+          id: d.id,
+          name: d.name,
+          programs: d.programs.map(p => ({
+            id: p.id,
+            name: p.name
+          }))
+        })),
+        levels: [
+          { id: 1, name: 'Level 1 (Freshman)' },
+          { id: 2, name: 'Level 2 (Sophomore)' },
+          { id: 3, name: 'Level 3 (Junior)' },
+          { id: 4, name: 'Level 4 (Senior)' }
+        ]
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ============ GET PROFESSOR COURSES ============
+
+router.get('/professor/courses',
+  authenticate,
+  async (req, res, next) => {
+    try {
+      const { email } = req.query;
+
+      // Ensure user is requesting their own courses or is admin
+      if (req.user.email !== email && req.user.role !== 'ADMIN') {
+        throw new ApiError(403, 'Access denied');
+      }
+
+      // Verify user is a professor
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: { role: true, id: true }
+      });
+
+      if (!user || user.role !== 'PROFESSOR') {
+        throw new ApiError(403, 'User is not a professor');
+      }
+
+      // Get courses where user is an instructor
+      const instructorCourses = await prisma.courseInstructor.findMany({
+        where: { userId: user.id },
+        include: {
+          course: {
+            include: {
+              instructors: {
+                include: {
+                  user: {
+                    select: { name: true, email: true }
+                  }
+                }
+              },
+              scheduleSlots: true,
+              _count: {
+                select: { enrollments: true }
+              }
+            }
+          }
+        }
+      });
+
+      const courses = instructorCourses.map(ic => ({
+        ...ic.course,
+        isPrimary: ic.isPrimary
+      }));
+
+      // Reuse formatCourse if available, or just map needed fields.
+      // Since formatCourse is in course.routes.js and not exported, we duplicate logic or simple mapping.
+      // AddContentScreen expects: id, code, name.
+      
+      res.json({
+        success: true,
+        courses: courses.map(c => ({
+          id: c.id,
+          code: c.code,
+          name: c.name,
+          category: c.category,
+          isPrimary: c.isPrimary,
+          enrollmentCount: c._count?.enrollments || 0
+        }))
+      });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 // ============ GET USER BY EMAIL ============
 
@@ -58,7 +169,9 @@ router.get('/:email',
                 select: { id: true, code: true, name: true }
               }
             }
-          }
+          },
+          department: true,
+          program: true
         }
       });
 
@@ -81,14 +194,14 @@ router.get('/:email',
 router.put('/:email',
   authenticate,
   [
-    param('email').isEmail(),
-    body('name').optional().trim().notEmpty(),
-    body('avatar').optional().isString(),
-    body('major').optional().isString(),
-    body('department').optional().isString(),
-    body('program').optional().isString(),
-    body('gpa').optional().isFloat({ min: 0, max: 4 }),
-    body('level').optional().isInt({ min: 1, max: 10 }),
+    param('email').isEmail().normalizeEmail(),
+    body('name').optional(),
+    body('avatar').optional(),
+    body('major').optional(),
+    body('department').optional(),
+    body('program').optional(),
+    body('gpa').optional(),
+    body('level').optional(),
     validate
   ],
   async (req, res, next) => {
@@ -100,7 +213,16 @@ router.put('/:email',
         throw new ApiError(403, 'Access denied');
       }
 
-      const { name, avatar, major, department, program, gpa, level, isOnboardingComplete, enrolledCourses } = req.body;
+      const { 
+        name, 
+        avatar, 
+        departmentId, // Use IDs for relations
+        programId, 
+        gpa, 
+        level, 
+        isOnboardingComplete, 
+        enrolledCourses 
+      } = req.body;
 
       // Update user
       const updatedUser = await prisma.user.update({
@@ -108,9 +230,9 @@ router.put('/:email',
         data: {
           ...(name && { name }),
           ...(avatar !== undefined && { avatar }),
-          ...(major !== undefined && { major }),
-          ...(department !== undefined && { department }),
-          ...(program !== undefined && { program }),
+          // Update relations using IDs
+          ...(departmentId && { departmentId }), 
+          ...(programId && { programId }),
           ...(gpa !== undefined && { gpa }),
           ...(level !== undefined && { level }),
           ...(isOnboardingComplete !== undefined && { isOnboardingComplete })
@@ -167,7 +289,9 @@ router.put('/:email',
         include: {
           enrollments: {
             select: { courseId: true }
-          }
+          },
+          department: true,
+          program: true
         }
       });
 

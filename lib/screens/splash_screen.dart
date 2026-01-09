@@ -18,8 +18,12 @@ class _SplashScreenState extends State<SplashScreen> {
     _controller = VideoPlayerController.asset(
       'assets/splash screen/science Animated Logo.mp4',
     )..initialize().then((_) {
-        setState(() {});
-        _controller.play();
+        if (mounted) {
+          setState(() {});
+          _controller.play();
+        }
+      }).catchError((error) {
+        debugPrint('SplashScreen: Video failed to initialize: $error');
       });
 
     // Navigate to register screen after 5 seconds

@@ -37,7 +37,7 @@ router.get('/',
         where = {
           OR: [
             { courseId: { in: courseIds } },
-            { courseId: null, targetAudience: 'ALL' }
+            { courseId: null }
           ]
         };
       }

@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'providers/app_session_provider.dart';
 import 'screens/dashboard_shell.dart';
-import 'screens/home_screen.dart';
-import 'screens/home_screen.dart';
 import 'screens/TaskPages/Task.dart';
 import 'screens/assignments_screen.dart';
 import 'screens/schedule_screen.dart';
@@ -25,14 +23,11 @@ import 'screens/splash_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'storage_services.dart';
 import 'notification_service.dart';
-import 'screens/student_guide/guide_selection_screen.dart';
 import 'screens/student_guide/explain_screen.dart';
 import 'screens/student_guide/explain_program.dart';
 import 'screens/guest/guest_dashboard_shell.dart';
 import 'screens/guest/guest_home_screen.dart';
-import 'screens/professor_dashboard.dart';
 import 'screens/adaptive_dashboard.dart';
-import 'models/user.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

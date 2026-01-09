@@ -1,5 +1,6 @@
 /// App Session Provider - Clean state management without freezed
 /// Handles authentication state for both students and professors
+library;
 
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

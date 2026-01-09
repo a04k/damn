@@ -23,7 +23,9 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
     titleController = TextEditingController(text: widget.task.title);
     descController = TextEditingController(text: widget.task.description ?? '');
     selectedDate = widget.task.dueDate;
-    selectedTime = TimeOfDay.fromDateTime(widget.task.dueDate);
+    selectedTime = widget.task.dueDate != null 
+        ? TimeOfDay.fromDateTime(widget.task.dueDate!) 
+        : null;
     importance = widget.task.priority;
   }
 
@@ -32,7 +34,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Task Details"),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color(0xFF002147),
         foregroundColor: Colors.white,
       ),
       body: Padding(
@@ -92,7 +94,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                 child: ElevatedButton(
                   onPressed: saveChanges,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
+                    backgroundColor: const Color(0xFF002147),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -168,7 +170,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isSelected ? color : const Color(0xFFEEC97A),
+              color: isSelected ? color : const Color(0xFFE5E7EB),
             ),
             color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
           ),
@@ -186,7 +188,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
 }
 
 const labelStyle = TextStyle(
-  color: Color(0xFF1F2C5C),
+  color: Color(0xFF1F2937),
   fontSize: 14,
   fontWeight: FontWeight.w600,
 );
@@ -230,6 +232,7 @@ Widget dateBox({required String title, required VoidCallback onTap}) {
 const boxDecoration = BoxDecoration(
   borderRadius: BorderRadius.all(Radius.circular(10)),
   border: Border.fromBorderSide(
-    BorderSide(color: Color(0xFFEEC97A), width: 1.4),
+    BorderSide(color: Color(0xFFE5E7EB), width: 1.0),
   ),
+  color: Color(0xFFF9FAFB), // light gray bg for inputs
 );
