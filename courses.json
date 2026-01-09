@@ -1,0 +1,672 @@
+{
+  "courses": [
+    {
+      "course_code": "SAFS 101",
+      "course_title": "الأمن والسلامة (Safety)",
+      "credit_hours": 1,
+      "department": "University Requirement",
+      "programs": ["All Science Programs"]
+    },
+    {
+      "course_code": "HURI 101",
+      "course_title": "حقوق الإنسان (Human Rights)",
+      "credit_hours": 1,
+      "department": "University Requirement",
+      "programs": ["All Science Programs"]
+    },
+    {
+      "course_code": "ENGL 102",
+      "course_title": "لغة إنجليزية 1 (English Language 1)",
+      "credit_hours": 2,
+      "department": "University Requirement",
+      "programs": ["All Science Programs"]
+    },
+    {
+      "course_code": "INCO 102",
+      "course_title": "مدخل في الحاسب الآلي (Introduction to Computer)",
+      "credit_hours": 1,
+      "department": "University Requirement",
+      "programs": ["All Science Programs"]
+    },
+    {
+      "course_code": "MATH 101",
+      "course_title": "تفاضل وتكامل 1 (Calculus 1)",
+      "credit_hours": 4,
+      "details": { "lecture": 3, "tutorial": 2, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Statistics", "Computer Science", "Physics", "Chemistry", "Biophysics", "Geology", "Geophysics", "Botany", "Zoology", "Microbiology"]
+    },
+    {
+      "course_code": "MATH 102",
+      "course_title": "تفاضل وتكامل 2 (Calculus 2)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Statistics", "Computer Science", "Physics", "Chemistry", "Biophysics", "Geology", "Geophysics"]
+    },
+    {
+      "course_code": "MATH 104",
+      "course_title": "مفاهيم أساسية في الرياضيات (Basic Concepts in Mathematics)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 2, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Statistics", "Computer Science"]
+    },
+    {
+      "course_code": "COMP 102",
+      "course_title": "مقدمة في الحاسب الآلي (Introduction to Computer Science)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics", "Physics & Computer Science"]
+    },
+    {
+      "course_code": "COMP 104",
+      "course_title": "برمجة حاسب 1 (Computer Programming 1)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics", "Physics & Computer Science"]
+    },
+    {
+      "course_code": "COMP 106",
+      "course_title": "تصميم منطق (Logic Design)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Pure Mathematics & Computer Science"]
+    },
+    {
+      "course_code": "STAT 101",
+      "course_title": "مقدمة في الإحصاء (Introduction to Statistics)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 2, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Statistics", "Mathematics", "Computer Science", "Chemistry", "Applied Chemistry"]
+    },
+    {
+      "course_code": "STAT 102",
+      "course_title": "نظرية الاحتمالات 1 (Probability Theory 1)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 2, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Statistics", "Pure Mathematics & Mathematical Statistics"]
+    },
+    {
+      "course_code": "MATH 201",
+      "course_title": "التحليل الرياضي (Mathematical Analysis)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Pure Mathematics & Mathematical Statistics", "Pure Mathematics & Computer Science"]
+    },
+    {
+      "course_code": "MATH 202",
+      "course_title": "معادلات تفاضلية عادية (Ordinary Differential Equations)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Physics", "Computer Science", "Statistics"]
+    },
+    {
+      "course_code": "MATH 203",
+      "course_title": "جبر خطي (Linear Algebra)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science", "Statistics"]
+    },
+    {
+      "course_code": "MATH 204",
+      "course_title": "تحليل حقيقي (Real Analysis)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science", "Statistics"]
+    },
+    {
+      "course_code": "MATH 205",
+      "course_title": "نظرية الأعداد (Number Theory)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Pure Mathematics & Computer Science"]
+    },
+    {
+      "course_code": "MATH 206",
+      "course_title": "نظرية الألعاب (Game Theory)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Statistics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 208",
+      "course_title": "البرمجة الخطية (Linear Programming)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 211",
+      "course_title": "التحليل الإتجاهي وحساب الممتدات (Vector Analysis)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics"]
+    },
+    {
+      "course_code": "MATH 212",
+      "course_title": "النظرية الكهرومغناطيسية (Electromagnetic Theory)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics"]
+    },
+    {
+      "course_code": "MATH 213",
+      "course_title": "ميكانيكا 2 (Mechanics 2)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics"]
+    },
+    {
+      "course_code": "MATH 214",
+      "course_title": "ميكانيكا 3 (Mechanics 3)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics"]
+    },
+    {
+      "course_code": "MATH 222",
+      "course_title": "المنطق الرياضي (Mathematical Logic)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science", "Statistics"]
+    },
+    {
+      "course_code": "STAT 201",
+      "course_title": "نظرية الإحصاء 1 (Statistical Theory 1)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Statistics", "Pure Mathematics & Mathematical Statistics"]
+    },
+    {
+      "course_code": "STAT 202",
+      "course_title": "نظرية الإحصاء 2 (Statistical Theory 2)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Statistics", "Pure Mathematics & Mathematical Statistics"]
+    },
+    {
+      "course_code": "COMP 201",
+      "course_title": "تصميم وتحليل الخوارزميات (Algorithms)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics", "Physics & Computer Science"]
+    },
+    {
+      "course_code": "COMP 202",
+      "course_title": "تراكيب البيانات (Data Structures)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics", "Physics & Computer Science"]
+    },
+    {
+      "course_code": "COMP 203",
+      "course_title": "نظرية الحسابات (Theory of Computation)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science"]
+    },
+    {
+      "course_code": "COMP 204",
+      "course_title": "شبكات الحاسب (Computer Networks)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics"]
+    },
+    {
+      "course_code": "COMP 205",
+      "course_title": "برمجة حاسب 2 (Computer Programming 2)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science"]
+    },
+    {
+      "course_code": "COMP 206",
+      "course_title": "برمجة الويب (Web Programming)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics"]
+    },
+    {
+      "course_code": "COMP 207",
+      "course_title": "نظم قواعد بيانات (Database Systems)",
+      "credit_hours": 4,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 3 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics", "Physics & Computer Science"]
+    },
+    {
+      "course_code": "COMP 208",
+      "course_title": "نظرية الآليات الذاتية (Automata Theory)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 2, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics"]
+    },
+    {
+      "course_code": "COMP 210",
+      "course_title": "خوارزميات الرسوم (Graphics Algorithms)",
+      "credit_hours": 2,
+      "department": "Mathematics",
+      "programs": ["Computer Science"]
+    },
+    {
+      "course_code": "COMP 212",
+      "course_title": "برمجة حاسب متقدم (Advanced Computer Programming)",
+      "credit_hours": 3,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Physics & Computer Science"]
+    },
+    {
+      "course_code": "MATH 301",
+      "course_title": "الجبر المجرد 1 (Abstract Algebra 1)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 302",
+      "course_title": "التوبولوجي العام (General Topology)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 303",
+      "course_title": "التحليل العددي (Numerical Analysis)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 304",
+      "course_title": "نظرية القياس (Measure Theory)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 305",
+      "course_title": "الهندسة التفاضلية (Differential Geometry)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 306",
+      "course_title": "بحوث العمليات (Operations Research)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science", "Statistics"]
+    },
+    {
+      "course_code": "MATH 307",
+      "course_title": "نظرية الخوارزميات (Theory of Algorithms)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 311",
+      "course_title": "ميكانيكا الأوساط المتصلة (Continuum Mechanics)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics"]
+    },
+    {
+      "course_code": "MATH 313",
+      "course_title": "ميكانيكا الكم 1 (Quantum Mechanics 1)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics"]
+    },
+    {
+      "course_code": "MATH 314",
+      "course_title": "ميكانيكا الكم 2 (Quantum Mechanics 2)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics"]
+    },
+    {
+      "course_code": "MATH 319",
+      "course_title": "مبادئ النمذجة الرياضية (Principles of Mathematical Modeling)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 331",
+      "course_title": "مبادئ حساب التغيرات (Calculus of Variations)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science"]
+    },
+    {
+      "course_code": "STAT 301",
+      "course_title": "استدلال إحصائي 1 (Statistical Inference 1)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Statistics", "Mathematics"]
+    },
+    {
+      "course_code": "STAT 302",
+      "course_title": "استدلال إحصائي 2 (Statistical Inference 2)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Statistics", "Mathematics"]
+    },
+    {
+      "course_code": "STAT 303",
+      "course_title": "عمليات عشوائية 1 (Stochastic Processes 1)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Statistics", "Mathematics"]
+    },
+    {
+      "course_code": "COMP 301",
+      "course_title": "برمجة متقدمة (Advanced Programming)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science"]
+    },
+    {
+      "course_code": "COMP 302",
+      "course_title": "تألفيات خوارزمية (Algorithmic Combinatorics)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics"]
+    },
+    {
+      "course_code": "COMP 303",
+      "course_title": "قواعد ودلالات لغات البرمجة (Programming Language Syntax)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics"]
+    },
+    {
+      "course_code": "COMP 304",
+      "course_title": "تصميم مؤلفات (Compiler Design)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics"]
+    },
+    {
+      "course_code": "COMP 305",
+      "course_title": "نظرية التعقد (Complexity Theory)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics"]
+    },
+    {
+      "course_code": "COMP 306",
+      "course_title": "رسومات الحاسب (Computer Graphics)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics"]
+    },
+    {
+      "course_code": "COMP 307",
+      "course_title": "نظم تشغيل (Operating Systems)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics"]
+    },
+    {
+      "course_code": "COMP 308",
+      "course_title": "تشفير (Cryptography)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics"]
+    },
+    {
+      "course_code": "COMP 309",
+      "course_title": "نظم الوسائط المتعددة (Multimedia Systems)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics"]
+    },
+    {
+      "course_code": "COMP 311",
+      "course_title": "اللغات التصريحية (Declarative Languages)",
+      "credit_hours": 2,
+      "details": { "lecture": 1, "tutorial": 0, "lab": 2 },
+      "department": "Mathematics",
+      "programs": ["Computer Science"]
+    },
+    {
+      "course_code": "MATH 401",
+      "course_title": "التحليل الدالي (Functional Analysis)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Statistics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 402",
+      "course_title": "الجبر المجرد 2 (Abstract Algebra 2)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 403",
+      "course_title": "التحليل المركب (Complex Analysis)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Statistics", "Computer Science"]
+    },
+    {
+      "course_code": "MATH 404",
+      "course_title": "المعادلات التفاضلية الجزئية (Partial Differential Equations)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Mathematics", "Computer Science"]
+    },
+    {
+      "course_code": "STAT 405",
+      "course_title": "تصميم وتحليل التجارب (Design and Analysis of Experiments)",
+      "credit_hours": 4,
+      "details": { "lecture": 3, "tutorial": 1, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Statistics", "Mathematics"]
+    },
+    {
+      "course_code": "STAT 415",
+      "course_title": "تحليل إحصائي متعدد (Multivariate Statistical Analysis)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Statistics", "Mathematics"]
+    },
+    {
+      "course_code": "COMP 401",
+      "course_title": "ذكاء اصطناعي (Artificial Intelligence)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics", "Physics & Computer Science"]
+    },
+    {
+      "course_code": "COMP 402",
+      "course_title": "المعلوماتية الحيوية (Bioinformatics)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Physics & Computer Science"]
+    },
+    {
+      "course_code": "COMP 403",
+      "course_title": "المعالجة المتوازية والموزعة (Parallel and Distributed Processing)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Statistics"]
+    },
+    {
+      "course_code": "COMP 404",
+      "course_title": "هندسة البرمجيات (Software Engineering)",
+      "credit_hours": 2,
+      "details": { "lecture": 2, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Physics & Computer Science"]
+    },
+    {
+      "course_code": "COMP 407",
+      "course_title": "معالجة الصور (Image Processing)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Mathematics",
+      "programs": ["Computer Science", "Mathematics", "Physics & Computer Science"]
+    },
+    {
+      "course_code": "PHYS 101",
+      "course_title": "فيزياء عامة 1 (General Physics 1)",
+      "credit_hours": 4,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 3 },
+      "department": "Physics",
+      "programs": ["Physics", "Mathematics", "Chemistry", "Computer Science", "Geology", "Biophysics", "Botany", "Zoology", "Microbiology"]
+    },
+    {
+      "course_code": "PHYS 102",
+      "course_title": "فيزياء عامة 3 (General Physics 3)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Physics",
+      "programs": ["Physics", "Mathematics", "Computer Science", "Chemistry", "Applied Chemistry"]
+    },
+    {
+      "course_code": "PHYS 103",
+      "course_title": "فيزياء عامة 2 (General Physics 2)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Physics",
+      "programs": ["Physics", "Biophysics", "Chemistry", "Geology"]
+    },
+    {
+      "course_code": "PHYS 104",
+      "course_title": "فيزياء عامة 4 (General Physics 4)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Physics",
+      "programs": ["Physics", "Biophysics", "Chemistry"]
+    },
+    {
+      "course_code": "PHYS 201",
+      "course_title": "فيزياء حديثة 1 (Modern Physics 1)",
+      "credit_hours": 2,
+      "department": "Physics",
+      "programs": ["Physics", "Biophysics", "Chemistry", "Computer Science"]
+    },
+    {
+      "course_code": "CHEM 101",
+      "course_title": "كيمياء عامة 1 (General Chemistry 1)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Chemistry",
+      "programs": ["Chemistry", "Physics", "Biophysics", "Geology", "Biology", "Microbiology", "Mathematics", "Botany", "Zoology"]
+    },
+    {
+      "course_code": "CHEM 102",
+      "course_title": "كيمياء عامة 2 (General Chemistry 2)",
+      "credit_hours": 3,
+      "details": { "lecture": 3, "tutorial": 0, "lab": 0 },
+      "department": "Chemistry",
+      "programs": ["Chemistry", "Physics", "Biophysics", "Geology", "Biology", "Microbiology", "Applied Chemistry", "Botany", "Zoology"]
+    },
+    {
+      "course_code": "CHEM 211",
+      "course_title": "كيمياء عضوية 1 (Organic Chemistry 1)",
+      "credit_hours": 2,
+      "department": "Chemistry",
+      "programs": ["Chemistry", "Applied Chemistry"]
+    },
+    {
+      "course_code": "CHEM 222",
+      "course_title": "كيمياء غير عضوية 1 (Inorganic Chemistry 1)",
+      "credit_hours": 2,
+      "department": "Chemistry",
+      "programs": ["Chemistry", "Applied Chemistry"]
+    },
+    {
+      "course_code": "BOTA 101",
+      "course_title": "أساسيات علم النبات 1 (Fundamentals of Botany 1)",
+      "credit_hours": 3,
+      "department": "Botany",
+      "programs": ["Botany", "Zoology", "Microbiology", "Entomology", "Chemistry"]
+    },
+    {
+      "course_code": "ZOOL 101",
+      "course_title": "علم الحيوان 1 (Zoology 1)",
+      "credit_hours": 2,
+      "department": "Zoology",
+      "programs": ["Zoology", "Botany", "Microbiology", "Entomology", "Chemistry"]
+    },
+    {
+      "course_code": "MICR 102",
+      "course_title": "ميكروبيولوجي (Microbiology)",
+      "credit_hours": 2,
+      "department": "Microbiology",
+      "programs": ["Microbiology", "Botany", "Zoology", "Entomology"]
+    },
+    {
+      "course_code": "GEOL 101",
+      "course_title": "جيولوجيا طبيعية (Physical Geology)",
+      "credit_hours": 3,
+      "department": "Geology",
+      "programs": ["Geology", "Geophysics"]
+    }
+  ]
+}

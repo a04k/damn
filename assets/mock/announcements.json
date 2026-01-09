@@ -1,0 +1,24 @@
+{
+    "announcements": [
+        {
+            "id": "1",
+            "title": "Welcome to Spring Semester 2026!",
+            "content": "Classes begin on January 6th. Make sure to check your schedule and prepare for an exciting semester ahead!",
+            "author": "Academic Office",
+            "createdAt": "2026-01-01T10:00:00",
+            "priority": "high",
+            "courseId": null,
+            "isRead": false
+        },
+        {
+            "id": "2",
+            "title": "Library Extended Hours",
+            "content": "The university library will have extended hours (7 AM - 12 AM) during the exam period from January 15-25.",
+            "author": "Library Services",
+            "createdAt": "2026-01-05T14:30:00",
+            "priority": "medium",
+            "courseId": null,
+            "isRead": false
+        }
+    ]
+}

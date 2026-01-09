@@ -1,0 +1,116 @@
+{
+    "departments": [
+        {
+            "id": "math",
+            "name": "Mathematics Department",
+            "programs": [
+                {
+                    "id": "cs",
+                    "name": "Computer Science"
+                },
+                {
+                    "id": "stats",
+                    "name": "Statistics"
+                },
+                {
+                    "id": "pure_math",
+                    "name": "Pure Mathematics"
+                },
+                {
+                    "id": "applied_math",
+                    "name": "Applied Mathematics"
+                }
+            ]
+        },
+        {
+            "id": "physics",
+            "name": "Physics Department",
+            "programs": [
+                {
+                    "id": "general_physics",
+                    "name": "General Physics"
+                },
+                {
+                    "id": "applied_physics",
+                    "name": "Applied Physics"
+                },
+                {
+                    "id": "biophysics",
+                    "name": "Biophysics"
+                }
+            ]
+        },
+        {
+            "id": "chemistry",
+            "name": "Chemistry Department",
+            "programs": [
+                {
+                    "id": "general_chemistry",
+                    "name": "General Chemistry"
+                },
+                {
+                    "id": "organic_chemistry",
+                    "name": "Organic Chemistry"
+                },
+                {
+                    "id": "biochemistry",
+                    "name": "Biochemistry"
+                }
+            ]
+        },
+        {
+            "id": "biology",
+            "name": "Biology Department",
+            "programs": [
+                {
+                    "id": "general_biology",
+                    "name": "General Biology"
+                },
+                {
+                    "id": "microbiology",
+                    "name": "Microbiology"
+                },
+                {
+                    "id": "botany",
+                    "name": "Botany"
+                },
+                {
+                    "id": "zoology",
+                    "name": "Zoology"
+                }
+            ]
+        },
+        {
+            "id": "geology",
+            "name": "Geology Department",
+            "programs": [
+                {
+                    "id": "general_geology",
+                    "name": "General Geology"
+                },
+                {
+                    "id": "geophysics",
+                    "name": "Geophysics"
+                }
+            ]
+        }
+    ],
+    "levels": [
+        {
+            "id": 1,
+            "name": "Level 1 (Freshman)"
+        },
+        {
+            "id": 2,
+            "name": "Level 2 (Sophomore)"
+        },
+        {
+            "id": 3,
+            "name": "Level 3 (Junior)"
+        },
+        {
+            "id": 4,
+            "name": "Level 4 (Senior)"
+        }
+    ]
+}

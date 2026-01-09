@@ -1,0 +1,36 @@
+{
+    "tasks": [
+        {
+            "id": "1",
+            "title": "Complete Data Structures Assignment",
+            "course": "Computer Science",
+            "priority": "high",
+            "completed": false,
+            "description": "Implement binary search tree"
+        },
+        {
+            "id": "2",
+            "title": "Read Chapter 5 - Algorithms",
+            "course": "Computer Science",
+            "priority": "medium",
+            "completed": false,
+            "description": "Study sorting algorithms"
+        },
+        {
+            "id": "3",
+            "title": "Math Problem Set 7",
+            "course": "Mathematics",
+            "priority": "low",
+            "completed": false,
+            "description": "Linear algebra exercises"
+        },
+        {
+            "id": "4",
+            "title": "Physics Lab Report",
+            "course": "Physics",
+            "priority": "high",
+            "completed": false,
+            "description": "Write lab report"
+        }
+    ]
+}

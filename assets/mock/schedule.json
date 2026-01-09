@@ -1,0 +1,28 @@
+{
+    "events": [
+        {
+            "id": "1",
+            "title": "Data Structures Lecture",
+            "courseId": "CS201",
+            "location": "Room 305",
+            "startTime": "2026-01-07T09:00:00",
+            "endTime": "2026-01-07T10:30:00",
+            "color": "#6366F1",
+            "type": "lecture",
+            "isRecurring": true,
+            "recurrenceRule": "weekly"
+        },
+        {
+            "id": "2",
+            "title": "Algorithms Lab",
+            "courseId": "CS301",
+            "location": "Lab 102",
+            "startTime": "2026-01-07T11:00:00",
+            "endTime": "2026-01-07T13:00:00",
+            "color": "#10B981",
+            "type": "lab",
+            "isRecurring": true,
+            "recurrenceRule": "weekly"
+        }
+    ]
+}
