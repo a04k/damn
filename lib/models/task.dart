@@ -16,7 +16,8 @@ class Task {
   final DateTime? updatedAt;
   final TaskType taskType;
   final List<String> attachments;
-  final Map<String, dynamic>? submission;
+  final List<dynamic>? questions;
+  final Map<String, dynamic>? answers;
 
   Task({
     required this.id,
@@ -31,6 +32,8 @@ class Task {
     this.taskType = TaskType.personal,
     this.attachments = const [],
     this.submission,
+    this.questions,
+    this.answers,
   });
 
   Task copyWith({
@@ -46,6 +49,8 @@ class Task {
     TaskType? taskType,
     List<String>? attachments,
     Map<String, dynamic>? submission,
+    List<dynamic>? questions,
+    Map<String, dynamic>? answers,
   }) {
     return Task(
       id: id ?? this.id,
@@ -60,6 +65,8 @@ class Task {
       taskType: taskType ?? this.taskType,
       attachments: attachments ?? this.attachments,
       submission: submission ?? this.submission,
+      questions: questions ?? this.questions,
+      answers: answers ?? this.answers,
     );
   }
 
@@ -77,6 +84,8 @@ class Task {
       'taskType': taskType.name.toUpperCase(),
       'attachments': attachments,
       'submission': submission,
+      'questions': questions,
+      'answers': answers,
     };
   }
 
@@ -147,6 +156,8 @@ class Task {
       taskType: taskType,
       attachments: attachments,
       submission: json['submission'] as Map<String, dynamic>?,
+      questions: json['questions'] as List<dynamic>?,
+      answers: json['answers'] as Map<String, dynamic>?,
     );
   }
 }
