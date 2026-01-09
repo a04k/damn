@@ -2,9 +2,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/announcement.dart';
 import '../services/data_service.dart';
 
-/// Announcements provider using DataService
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Announcements provider using DataService with local read status
 final announcementsProvider = FutureProvider<List<Announcement>>((ref) async {
-  return DataService.getAnnouncements();
+  final announcements = await DataService.getAnnouncements();
+  final prefs = await SharedPreferences.getInstance();
+  final readIds = prefs.getStringList('read_announcements') ?? [];
+  
+  return announcements.map((a) {
+    if (readIds.contains(a.id)) {
+      return a.copyWith(isRead: true);
+    }
+    return a;
+  }).toList();
 });
 
 /// Announcement controller for actions
@@ -20,8 +31,15 @@ class AnnouncementController extends StateNotifier<AsyncValue<void>> {
   Future<void> markAsRead(String id) async {
     state = const AsyncValue.loading();
     try {
-      // Mark as read logic (to be implemented in API)
-      _ref.invalidate(announcementsProvider);
+      final prefs = await SharedPreferences.getInstance();
+      final readIds = prefs.getStringList('read_announcements') ?? [];
+      
+      if (!readIds.contains(id)) {
+        readIds.add(id);
+        await prefs.setStringList('read_announcements', readIds);
+        _ref.invalidate(announcementsProvider);
+      }
+      
       state = const AsyncValue.data(null);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
@@ -31,8 +49,23 @@ class AnnouncementController extends StateNotifier<AsyncValue<void>> {
   Future<void> markAllAsRead() async {
     state = const AsyncValue.loading();
     try {
-      // Mark all as read logic
-      _ref.invalidate(announcementsProvider);
+      final announcements = await _ref.read(announcementsProvider.future);
+      final prefs = await SharedPreferences.getInstance();
+      final readIds = prefs.getStringList('read_announcements') ?? [];
+      
+      bool changed = false;
+      for (var a in announcements) {
+        if (!readIds.contains(a.id)) {
+          readIds.add(a.id);
+          changed = true;
+        }
+      }
+      
+      if (changed) {
+        await prefs.setStringList('read_announcements', readIds);
+        _ref.invalidate(announcementsProvider);
+      }
+      
       state = const AsyncValue.data(null);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);

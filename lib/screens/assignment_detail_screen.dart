@@ -8,7 +8,9 @@ import 'package:intl/intl.dart';
 
 import '../core/api_config.dart';
 import '../models/task.dart';
+import '../models/user.dart';
 import '../providers/task_provider.dart';
+import '../providers/app_session_provider.dart';
 import '../services/data_service.dart';
 
 class AssignmentDetailScreen extends ConsumerStatefulWidget {
@@ -352,17 +354,46 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
               
               const Divider(height: 48),
               
-              // SUBMISSION SECTION
-              const Text(
-                'Your Work',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              // ROLE BASED VIEW
+              if (ref.watch(currentUserProvider).value?.isProfessor ?? false) ...[
+                const Text(
+                  'Student Submissions',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              
-              if (isSubmitted) _buildSubmittedView() else _buildSubmissionForm(),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // Navigate to grading dashboard (placeholder)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Grading Dashboard coming soon!')),
+                      );
+                    },
+                    icon: const Icon(Icons.grading),
+                    label: const Text('View All Submissions'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: const Color(0xFF2E6AFF),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ] else ...[
+                 // SUBMISSION SECTION (STUDENT)
+                const Text(
+                  'Your Work',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (isSubmitted) _buildSubmittedView() else _buildSubmissionForm(),
+              ],
               
               const SizedBox(height: 40),
             ],

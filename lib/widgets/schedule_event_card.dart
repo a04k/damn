@@ -100,27 +100,25 @@ class ScheduleEventCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (event.courseId != null) ...[
-                          const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade100,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'Course',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.blue.shade700,
-                                fontWeight: FontWeight.w500,
-                              ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getEventColor().withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _getEventTypeLabel(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: _getEventColor(),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ],
+                        ),
                       ],
                     ),
                   ],
@@ -141,17 +139,50 @@ class ScheduleEventCard extends StatelessWidget {
 
   Color _getEventColor() {
     final type = event.type.toLowerCase();
-    if (type == 'exam' || event.title.toLowerCase().contains('exam')) {
+    final title = event.title.toLowerCase();
+    
+    // Check for exam
+    if (type == 'exam' || title.contains('exam') || title.contains('midterm') || title.contains('final')) {
       return Colors.red;
-    } else if (type == 'assignment') {
-      return Colors.orange;
-    } else if (type == 'lab') {
-      return Colors.purple;
-    } else if (type == 'lecture' || event.courseId != null) {
-      return Colors.blue;
-    } else {
-      return Colors.green;
     }
+    // Check for assignment
+    if (type == 'assignment' || title.contains('assignment') || title.contains('due:') || title.contains('submit')) {
+      return Colors.orange;
+    }
+    if (type == 'lab') {
+      return Colors.purple;
+    }
+    if (type == 'lecture' || event.courseId != null) {
+      return Colors.blue;
+    }
+    if (type == 'task') {
+      return Colors.teal;
+    }
+    return Colors.green;
+  }
+
+  String _getEventTypeLabel() {
+    final type = event.type.toLowerCase();
+    final title = event.title.toLowerCase();
+    
+    // Check for exam
+    if (type == 'exam' || title.contains('exam') || title.contains('midterm') || title.contains('final')) {
+      return 'Exam';
+    }
+    // Check for assignment - also check title keywords
+    if (type == 'assignment' || title.contains('assignment') || title.contains('due:') || title.contains('submit')) {
+      return 'Assignment';
+    }
+    if (type == 'lab') {
+      return 'Lab';
+    }
+    if (type == 'lecture') {
+      return 'Lecture';
+    }
+    if (type == 'task') {
+      return 'Task';
+    }
+    return 'Event';
   }
 
   String _formatTime(DateTime dateTime) {

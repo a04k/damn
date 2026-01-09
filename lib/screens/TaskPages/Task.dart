@@ -24,9 +24,9 @@ class TasksPage extends ConsumerWidget {
     
     // Separate pending and completed
     final pendingPersonal = personalTasks.where((t) => t.status == TaskStatus.pending).toList();
-    final completedPersonal = personalTasks.where((t) => t.status == TaskStatus.completed).toList();
+    final completedPersonal = personalTasks.where((t) => t.status == TaskStatus.completed || t.status == TaskStatus.submitted).toList();
     final pendingCourse = courseTasks.where((t) => t.status == TaskStatus.pending).toList();
-    final completedCourse = courseTasks.where((t) => t.status == TaskStatus.completed).toList();
+    final completedCourse = courseTasks.where((t) => t.status == TaskStatus.completed || t.status == TaskStatus.submitted).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -308,7 +308,7 @@ class _TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = task.status == TaskStatus.completed;
+    final isCompleted = task.status == TaskStatus.completed || task.status == TaskStatus.submitted;
     final typeColor = _getTypeColor(task.taskType);
 
     return Card(
@@ -325,15 +325,29 @@ class _TaskCard extends StatelessWidget {
           child: Checkbox(
             value: isCompleted,
             onChanged: (val) {
+              // If unchecking a completed assignment that was submitted
+              if (val == false && 
+                  task.taskType == TaskType.assignment && 
+                  task.status == TaskStatus.submitted) {
+                 // Prompt to unsubmit
+                 _showUnsubmitDialog(context);
+                 return;
+              }
+
               if (val == true && 
                   task.taskType == TaskType.assignment && 
                   task.status != TaskStatus.submitted && 
                   task.status != TaskStatus.completed) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Please submit your assignment before marking it as complete.'),
+                    content: Text('Please submit your assignment to mark it as complete.'),
                     backgroundColor: Colors.orange,
                   ),
+                );
+                // Navigate to assignment details
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AssignmentDetailScreen(task: task)),
                 );
                 return;
               }
@@ -467,7 +481,7 @@ class _TaskCard extends StatelessWidget {
   }
 
   Color _getDueDateColor(DateTime due, TaskStatus status) {
-    if (status == TaskStatus.completed) return Colors.grey;
+    if (status == TaskStatus.completed || status == TaskStatus.submitted) return Colors.grey;
     if (due.isBefore(DateTime.now())) return Colors.red;
     if (due.isBefore(DateTime.now().add(const Duration(days: 2)))) return Colors.orange[800]!;
     return const Color(0xFF6B7280);
@@ -483,5 +497,32 @@ class _TaskCard extends StatelessWidget {
     if (diff.inDays < 7) return '${diff.inDays} days';
     
     return '${date.month}/${date.day}';
+  }
+
+  Future<void> _showUnsubmitDialog(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Unsubmit Assignment?'),
+        content: const Text('To unsubmit, please open the assignment details.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Go to Details'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AssignmentDetailScreen(task: task)),
+      );
+    }
   }
 }

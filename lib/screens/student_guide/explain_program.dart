@@ -70,7 +70,7 @@ class _ExplainProgramState extends State<ExplainProgram> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      initialValue: selectedTrack,
+                      value: selectedTrack,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: const Color(0xFFF9FAFB),

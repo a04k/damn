@@ -472,7 +472,7 @@ class _SelectCoursePageState extends ConsumerState<SelectCoursePage> {
     bool enabled = true,
   }) {
     return DropdownButtonFormField<T>(
-      initialValue: value,
+      value: value,
       decoration: InputDecoration(
         labelText: label,
         filled: true,

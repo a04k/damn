@@ -60,20 +60,36 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         data: (announcements) {
                           final unreadCount = announcements.where((a) => !a.isRead).length;
                           if (unreadCount > 0) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF2563EB),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '$unreadCount new',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                            return Row(
+                              children: [
+                                TextButton(
+                                  onPressed: () => _markAllAsRead(),
+                                  child: const Text(
+                                    'Mark all read',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF2563EB),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2563EB),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '$unreadCount new',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             );
                           }
                           return const SizedBox.shrink();
@@ -176,9 +192,25 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               itemCount: announcements.length,
               itemBuilder: (context, index) {
                 final announcement = announcements[index];
-                return NotificationCard(
-                  announcement: announcement,
-                  onTap: () => _markAsRead(announcement.id),
+                return Dismissible(
+                  key: Key(announcement.id),
+                  direction: DismissDirection.endToStart,
+                  onDismissed: (_) => _dismissNotification(announcement.id),
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade400,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(Icons.delete_outline, color: Colors.white),
+                  ),
+                  child: NotificationCard(
+                    announcement: announcement,
+                    onTap: () => _markAsRead(announcement.id),
+                    onMarkAsRead: () => _markAsRead(announcement.id),
+                  ),
                 );
               },
             ),
@@ -189,16 +221,28 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     ref.read(announcementControllerProvider.notifier)
         .markAsRead(announcementId);
   }
+
+  void _markAllAsRead() {
+    ref.read(announcementControllerProvider.notifier).markAllAsRead();
+  }
+
+  void _dismissNotification(String announcementId) {
+    // Mark as read when dismissed (or could delete if that functionality exists)
+    ref.read(announcementControllerProvider.notifier)
+        .markAsRead(announcementId);
+  }
 }
 
 class NotificationCard extends StatelessWidget {
   final Announcement announcement;
   final VoidCallback onTap;
+  final VoidCallback? onMarkAsRead;
 
   const NotificationCard({
     super.key,
     required this.announcement,
     required this.onTap,
+    this.onMarkAsRead,
   });
 
   @override
@@ -348,17 +392,35 @@ class NotificationCard extends StatelessWidget {
               ],
             ),
             
-            // Unread indicator
-            if (!announcement.isRead)
+            // Mark as read button for unread notifications
+            if (!announcement.isRead && onMarkAsRead != null)
               Positioned(
-                top: 16,
-                right: 16,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF2563EB),
-                    shape: BoxShape.circle,
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: onMarkAsRead,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2563EB).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check, size: 12, color: Color(0xFF2563EB)),
+                        SizedBox(width: 4),
+                        Text(
+                          'Mark read',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2563EB),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

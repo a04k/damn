@@ -613,6 +613,40 @@ class DataService {
     }
   }
   
+  // ============ UPLOAD ============
+  
+  /// Upload file
+  static Future<String?> uploadFile(List<int> bytes, String filename) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('${ApiConfig.baseUrl}/upload'));
+      
+      final authHeader = ApiConfig.authHeaders['Authorization'];
+      if (authHeader != null) {
+         request.headers['Authorization'] = authHeader;
+      }
+
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: filename,
+      ));
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['fileUrl'] != null) {
+          return data['fileUrl'];
+        }
+      }
+      return null;
+    } catch (e) {
+      print('[DataService] Upload error: $e');
+      return null;
+    }
+  }
+
   // ============ CONTENT (Professor) ============
   
   /// Create course content (lecture, material)

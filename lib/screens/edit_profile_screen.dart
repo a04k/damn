@@ -396,7 +396,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     const goldColor = Color(0xFFFDC800);
 
     return DropdownButtonFormField<T>(
-      initialValue: value,
+      value: value,
       items: items,
       onChanged: onChanged,
       style: const TextStyle(color: navyColor),

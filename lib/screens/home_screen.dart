@@ -7,6 +7,9 @@ import '../providers/task_provider.dart';
 import '../providers/course_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../models/user.dart';
+import '../models/task.dart';
+import 'assignment_detail_screen.dart';
+import 'TaskPages/Taskdetails.dart';
 
 import '../widgets/loading_shimmer.dart';
 
@@ -240,10 +243,7 @@ class HomeScreen extends ConsumerWidget {
 
                         return Column(
                           children: tasks.take(3).map((task) => _TaskItem(
-                            title: task.title,
-                            dueDate: task.dueDate,
-                            type: task.taskType.name,
-                            onTap: () => context.go('/tasks'),
+                            task: task,
                           )).toList(),
                         );
                       },
@@ -533,24 +533,19 @@ class _CourseChip extends StatelessWidget {
 }
 
 class _TaskItem extends StatelessWidget {
-  final String title;
-  final DateTime? dueDate;
-  final String type;
-  final VoidCallback onTap;
+  final Task task;
 
   const _TaskItem({
-    required this.title,
-    this.dueDate,
-    required this.type,
-    required this.onTap,
+    required this.task,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isOverdue = dueDate != null && dueDate!.isBefore(DateTime.now());
+    final isOverdue = task.dueDate != null && task.dueDate!.isBefore(DateTime.now());
+    final type = task.taskType.name;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => _navigateToTask(context),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
@@ -567,7 +562,7 @@ class _TaskItem extends StatelessWidget {
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: isOverdue ? const Color(0xFFEF4444) : const Color(0xFFFBBF24),
+                color: _getStatusColor(),
                 shape: BoxShape.circle,
               ),
             ),
@@ -577,15 +572,15 @@ class _TaskItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    task.title,
                     style: const TextStyle(
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF1F2937),
                     ),
                   ),
-                  if (dueDate != null)
+                  if (task.dueDate != null)
                     Text(
-                      'Due: ${DateFormat('MMM d').format(dueDate!)}',
+                      'Due: ${DateFormat('MMM d').format(task.dueDate!)}',
                       style: TextStyle(
                         fontSize: 12,
                         color: isOverdue ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
@@ -597,21 +592,61 @@ class _TaskItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
+                color: _getTypeColor().withOpacity(0.15),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 type.toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF6B7280),
+                  color: _getTypeColor(),
                 ),
               ),
             ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: Color(0xFF9CA3AF), size: 20),
           ],
         ),
       ),
     );
+  }
+
+  void _navigateToTask(BuildContext context) {
+    // Navigate based on task type
+    if (task.taskType == TaskType.assignment) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => AssignmentDetailScreen(task: task),
+        ),
+      );
+    } else {
+      // For personal tasks, exams, labs - go to task details
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => TaskDetailsPage(task: task),
+        ),
+      );
+    }
+  }
+
+  Color _getStatusColor() {
+    final isOverdue = task.dueDate != null && task.dueDate!.isBefore(DateTime.now());
+    if (isOverdue) return const Color(0xFFEF4444);
+    if (task.status == TaskStatus.submitted) return const Color(0xFF10B981);
+    return const Color(0xFFFBBF24);
+  }
+
+  Color _getTypeColor() {
+    switch (task.taskType) {
+      case TaskType.assignment:
+        return const Color(0xFFF59E0B);
+      case TaskType.exam:
+        return const Color(0xFFEF4444);
+      case TaskType.lab:
+        return const Color(0xFF8B5CF6);
+      case TaskType.personal:
+        return const Color(0xFF3B82F6);
+    }
   }
 }

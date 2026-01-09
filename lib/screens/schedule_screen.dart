@@ -3,10 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../providers/schedule_provider.dart';
+import '../providers/task_provider.dart';
 import '../models/schedule_event.dart';
+import '../models/task.dart';
 import '../widgets/schedule_event_card.dart';
 import '../widgets/loading_shimmer.dart';
 import 'event_detail_screen.dart';
+import 'assignment_detail_screen.dart';
+import 'TaskPages/Taskdetails.dart';
 import 'package:intl/intl.dart';
 
 class ScheduleScreen extends ConsumerStatefulWidget {
@@ -37,6 +41,118 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   List<ScheduleEvent> _getEventsForDay(DateTime day) {
     // This would typically come from the repository
     return [];
+  }
+
+  /// Navigate to the appropriate detail screen based on event type
+  void _navigateToEventDetail(ScheduleEvent event) {
+    final type = event.type.toLowerCase();
+    
+    // Handle different event types
+    final title = event.title.toLowerCase();
+    
+    // Check for assignment - also check title keywords
+    if (type == 'assignment' || title.contains('assignment') || title.contains('due:') || title.contains('submit')) {
+      _navigateToAssignment(event);
+    } else if (type == 'lecture' || type == 'lab') {
+      // Navigate to course detail if courseId is available
+      if (event.courseId != null && event.courseId!.isNotEmpty) {
+        context.push('/course/${event.courseId}');
+      } else {
+        // Fallback to event detail screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => EventDetailScreen(eventId: event.id),
+          ),
+        );
+      }
+    } else if (type == 'exam' || event.title.toLowerCase().contains('exam')) {
+      // Navigate to course detail for exam info if courseId available
+      if (event.courseId != null && event.courseId!.isNotEmpty) {
+        context.push('/course/${event.courseId}');
+      } else {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => EventDetailScreen(eventId: event.id),
+          ),
+        );
+      }
+    } else if (type == 'task') {
+      // Navigate to task details
+      _navigateToTask(event);
+    } else {
+      // Default: navigate to event detail screen
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => EventDetailScreen(eventId: event.id),
+        ),
+      );
+    }
+  }
+
+  /// Navigate to assignment detail screen
+  void _navigateToAssignment(ScheduleEvent event) {
+    // Try to find the task from the tasks provider
+    final tasks = ref.read(tasksProvider);
+    
+    // Find matching task by ID or title
+    Task? matchingTask;
+    try {
+      matchingTask = tasks.firstWhere(
+        (t) => t.id == event.id || t.title.toLowerCase() == event.title.toLowerCase(),
+      );
+    } catch (_) {
+      // No matching task found, create one from event details
+      matchingTask = Task(
+        id: event.id,
+        title: event.title,
+        taskType: TaskType.assignment,
+        status: TaskStatus.pending,
+        priority: TaskPriority.medium,
+        subject: event.instructor,
+        description: event.description,
+        dueDate: event.endTime,
+        createdAt: DateTime.now(),
+      );
+    }
+    
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AssignmentDetailScreen(task: matchingTask!),
+      ),
+    );
+  }
+
+  /// Navigate to task detail screen
+  void _navigateToTask(ScheduleEvent event) {
+    // Try to find the task from the tasks provider
+    final tasks = ref.read(tasksProvider);
+    
+    // Find matching task by ID or title
+    Task? matchingTask;
+    try {
+      matchingTask = tasks.firstWhere(
+        (t) => t.id == event.id || t.title.toLowerCase() == event.title.toLowerCase(),
+      );
+    } catch (_) {
+      // No matching task found, create one from event details
+      matchingTask = Task(
+        id: event.id,
+        title: event.title,
+        taskType: TaskType.personal,
+        status: TaskStatus.pending,
+        priority: TaskPriority.medium,
+        subject: event.instructor,
+        description: event.description,
+        dueDate: event.endTime,
+        createdAt: DateTime.now(),
+      );
+    }
+    
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TaskDetailsPage(task: matchingTask!),
+      ),
+    );
   }
 
   @override
@@ -222,11 +338,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                                     const SizedBox(height: 8),
                                     ScheduleEventCard(
                                       event: next,
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (context) => EventDetailScreen(eventId: next.id)),
-                                        );
-                                      },
+                                      onTap: () => _navigateToEventDetail(next),
                                     ),
                                   ],
                                 );
@@ -343,15 +455,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                                     padding: const EdgeInsets.only(bottom: 8),
                                     child: ScheduleEventCard(
                                       event: event,
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) => EventDetailScreen(
-                                              eventId: event.id,
-                                            ),
-                                          ),
-                                        );
-                                      },
+                                      onTap: () => _navigateToEventDetail(event),
                                     ),
                                   )).toList(),
                                 );
