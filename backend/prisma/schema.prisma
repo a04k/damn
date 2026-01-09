@@ -348,6 +348,9 @@ model Task {
   startDate    DateTime?    @map("start_date")
   maxPoints    Int          @default(100) @map("max_points")
   attachments  Json?        
+  questions    Json?
+  settings     Json?
+  published    Boolean      @default(true)
   
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
@@ -375,6 +378,10 @@ model TaskSubmission {
   submittedAt  DateTime?        @map("submitted_at")
   fileUrl      String?          @map("file_url")
   notes        String?          @db.Text
+  
+  answers      Json?            // For exam answers
+  startedAt    DateTime?        @map("started_at") // For timed exams
+  snapshots    Json?            // For proctoring logs
   
   points       Float?
   grade        String?

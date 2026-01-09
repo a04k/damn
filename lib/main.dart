@@ -28,6 +28,7 @@ import 'screens/student_guide/explain_program.dart';
 import 'screens/guest/guest_dashboard_shell.dart';
 import 'screens/guest/guest_home_screen.dart';
 import 'screens/adaptive_dashboard.dart';
+import 'screens/grading_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -185,6 +186,18 @@ class _StudentDashboardAppState extends ConsumerState<StudentDashboardApp> {
             GoRoute(
               path: '/my-courses',
               builder: (context, state) => const CoursesListScreen(),
+            ),
+            GoRoute(
+              path: '/grading/:taskId',
+              builder: (context, state) {
+                final taskId = state.pathParameters['taskId']!;
+                final extra = state.extra as Map<String, dynamic>?;
+                return GradingDashboard(
+                  taskId: taskId,
+                  taskTitle: extra?['title'] ?? 'Assignment',
+                  maxPoints: extra?['maxPoints'] ?? 100,
+                );
+              },
             ),
           ],
         ),

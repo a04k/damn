@@ -84,7 +84,10 @@ router.get('/',
           createdBy: t.createdBy.name,
           createdAt: t.createdAt,
           completedAt: t.completedAt,
-          submission: t.submissions?.[0] || null
+          submission: t.submissions && t.submissions.length > 0 ? {
+            ...t.submissions[0],
+            grade: t.submissions[0].grade || t.submissions[0].points
+          } : null
         }))
       });
     } catch (error) {
@@ -330,15 +333,10 @@ router.post('/:id/complete',
 
 router.post('/:id/submit',
   authenticate,
-  [
-    body('fileUrl').optional().isURL(),
-    body('notes').optional().isString(),
-    validate
-  ],
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { fileUrl, notes } = req.body;
+      const { fileUrl, notes, answers, snapshots, startedAt } = req.body;
 
       const task = await prisma.task.findUnique({
         where: { id }
@@ -346,6 +344,34 @@ router.post('/:id/submit',
 
       if (!task) {
         throw new ApiError(404, 'Task not found');
+      }
+
+      // Auto-grading logic
+      let points = undefined;
+      let status = 'SUBMITTED';
+      let gradedAt = undefined;
+
+      if (answers && task.questions && Array.isArray(task.questions)) {
+        let totalPoints = 0;
+        let isFullyAutoGradable = true;
+
+        task.questions.forEach(q => {
+          // Check if question requires manual grading
+          if (q.type === 'TEXT') {
+            isFullyAutoGradable = false;
+          } else if (q.correctAnswer && answers[q.id]) {
+            // Auto-grade MCQ / True-False
+            if (String(answers[q.id]) === String(q.correctAnswer)) {
+              totalPoints += (Number(q.points) || 0);
+            }
+          }
+        });
+
+        if (isFullyAutoGradable) {
+          points = totalPoints;
+          status = 'GRADED';
+          gradedAt = new Date();
+        }
       }
 
       // Create or update submission
@@ -359,7 +385,12 @@ router.post('/:id/submit',
         update: {
           fileUrl,
           notes,
-          status: 'SUBMITTED',
+          answers,
+          snapshots,
+          startedAt: startedAt ? new Date(startedAt) : undefined,
+          status, // Updated status
+          points: points, // Updated points
+          gradedAt: gradedAt,
           submittedAt: new Date()
         },
         create: {
@@ -367,7 +398,12 @@ router.post('/:id/submit',
           studentId: req.user.id,
           fileUrl,
           notes,
-          status: 'SUBMITTED',
+          answers,
+          snapshots,
+          startedAt: startedAt ? new Date(startedAt) : undefined,
+          status,
+          points: points,
+          gradedAt: gradedAt,
           submittedAt: new Date()
         }
       });
@@ -422,6 +458,92 @@ router.post('/:id/unsubmit',
       res.json({
         success: true,
         message: 'Submission removed'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ============ GET TASK SUBMISSIONS (Professor) ============
+
+router.get('/:id/submissions',
+  authenticate,
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+
+      // Check access (only professor/admin or course instructor)
+      if (req.user.role === 'STUDENT') {
+        throw new ApiError(403, 'Access denied'); 
+      }
+
+      const submissions = await prisma.taskSubmission.findMany({
+        where: { taskId: id },
+        include: {
+          student: {
+            select: { id: true, name: true, email: true, avatar: true }
+          }
+        },
+        orderBy: { submittedAt: 'desc' }
+      });
+
+      res.json({
+        success: true,
+        submissions
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ============ GRADE SUBMISSION (Professor) ============
+
+router.post('/submissions/:submissionId/grade',
+  authenticate,
+  [
+    body('points').isFloat({ min: 0 }),
+    body('feedback').optional().isString(),
+    validate
+  ],
+  async (req, res, next) => {
+    try {
+      const { submissionId } = req.params;
+      const { points, feedback } = req.body;
+
+      // Check access
+      if (req.user.role === 'STUDENT') {
+        throw new ApiError(403, 'Only professors can grade');
+      }
+
+      const submission = await prisma.taskSubmission.update({
+        where: { id: submissionId },
+        data: {
+          points,
+          feedback,
+          status: 'GRADED',
+          gradedAt: new Date(),
+          grade: points.toString() // Simple version, can be letter grade logic later
+        },
+        include: { task: true }
+      });
+
+      // Create Notification
+      await prisma.notification.create({
+        data: {
+          title: 'Assignment Graded',
+          message: `Your assignment for "${submission.task.title}" has been graded. You received ${points} points.`,
+          type: 'GRADE',
+          userId: submission.studentId,
+          referenceId: submission.taskId,
+          referenceType: 'TASK'
+        }
+      });
+
+      res.json({
+        success: true,
+        submission
       });
     } catch (error) {
       next(error);

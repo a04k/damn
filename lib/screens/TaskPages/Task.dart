@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'AddTask.dart';
 import 'Taskdetails.dart';
 import '../assignment_detail_screen.dart';
+import '../exam_runner_screen.dart';
 import '../../providers/task_provider.dart';
 import '../../models/task.dart';
 
@@ -24,9 +25,9 @@ class TasksPage extends ConsumerWidget {
     
     // Separate pending and completed
     final pendingPersonal = personalTasks.where((t) => t.status == TaskStatus.pending).toList();
-    final completedPersonal = personalTasks.where((t) => t.status == TaskStatus.completed || t.status == TaskStatus.submitted).toList();
+    final completedPersonal = personalTasks.where((t) => t.status == TaskStatus.completed || t.status == TaskStatus.submitted || t.status == TaskStatus.graded).toList();
     final pendingCourse = courseTasks.where((t) => t.status == TaskStatus.pending).toList();
-    final completedCourse = courseTasks.where((t) => t.status == TaskStatus.completed || t.status == TaskStatus.submitted).toList();
+    final completedCourse = courseTasks.where((t) => t.status == TaskStatus.completed || t.status == TaskStatus.submitted || t.status == TaskStatus.graded).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -308,7 +309,7 @@ class _TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = task.status == TaskStatus.completed || task.status == TaskStatus.submitted;
+    final isCompleted = task.status == TaskStatus.completed || task.status == TaskStatus.submitted || task.status == TaskStatus.graded;
     final typeColor = _getTypeColor(task.taskType);
 
     return Card(
@@ -363,6 +364,20 @@ class _TaskCard extends StatelessWidget {
               context,
               MaterialPageRoute(builder: (context) => AssignmentDetailScreen(task: task)),
             );
+          } else if (task.taskType == TaskType.exam) {
+            if (task.status == TaskStatus.submitted || task.status == TaskStatus.graded) {
+               ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('You have already submitted this exam.')),
+               );
+            } else {
+               Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ExamRunnerScreen(
+                  taskId: task.id, 
+                  courseId: task.courseId ?? '', // Handle pending backend support or null
+                )),
+              );
+            }
           } else {
             if (isPersonal && onEdit != null) {
               onEdit!();
@@ -427,6 +442,24 @@ class _TaskCard extends StatelessWidget {
                 ],
               ),
             ],
+            if (task.status == TaskStatus.graded && task.submission != null)
+              Container(
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green[200]!),
+                ),
+                child: Text(
+                  'Grade: ${task.submission!['grade'] ?? task.submission!['points'] ?? 'Graded'}',
+                  style: TextStyle(
+                    color: Colors.green[800],
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
           ],
         ),
         trailing: isPersonal && (onDelete != null || onEdit != null)

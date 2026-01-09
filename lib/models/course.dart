@@ -257,6 +257,8 @@ class Assignment {
   final String description;
   final bool isSubmitted;
   final List<String> attachments;
+  final double? grade;
+  final String? status;
 
   Assignment({
     required this.id,
@@ -266,6 +268,8 @@ class Assignment {
     required this.description,
     this.isSubmitted = false,
     this.attachments = const [],
+    this.grade,
+    this.status,
   });
 
   Map<String, dynamic> toJson() {
@@ -277,6 +281,8 @@ class Assignment {
       'description': description,
       'isSubmitted': isSubmitted,
       'attachments': attachments,
+      'grade': grade,
+      'status': status,
     };
   }
 
@@ -292,6 +298,8 @@ class Assignment {
               ?.map((e) => e.toString())
               .toList() ??
           [],
+      grade: json['grade'] != null ? double.tryParse(json['grade'].toString()) : null,
+      status: json['status']?.toString(),
     );
   }
 
@@ -305,6 +313,9 @@ class Exam {
   final String format;
   final String gradingBreakdown;
   final List<String> attachments;
+  final bool isSubmitted;
+  final String? status;
+  final String? grade;
 
   Exam({
     required this.id,
@@ -313,6 +324,9 @@ class Exam {
     required this.format,
     required this.gradingBreakdown,
     this.attachments = const [],
+    this.isSubmitted = false,
+    this.status,
+    this.grade,
   });
 
   Map<String, dynamic> toJson() {
@@ -323,6 +337,8 @@ class Exam {
       'format': format,
       'gradingBreakdown': gradingBreakdown,
       'attachments': attachments,
+      'isSubmitted': isSubmitted,
+      'status': status,
     };
   }
 
@@ -334,9 +350,11 @@ class Exam {
       format: json['format']?.toString() ?? '',
       gradingBreakdown: json['gradingBreakdown']?.toString() ?? '',
       attachments: (json['attachments'] as List?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          [],
+          ?.map((e) => e.toString())
+          .toList() ?? [],
+      isSubmitted: json['isSubmitted'] ?? false,
+      status: json['status']?.toString(),
+      grade: (json['grade'] ?? json['points'] ?? json['submission']?['grade'] ?? json['submission']?['points'])?.toString(),
     );
   }
 }

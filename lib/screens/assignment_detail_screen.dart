@@ -5,10 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/api_config.dart';
 import '../models/task.dart';
-import '../models/user.dart';
 import '../providers/task_provider.dart';
 import '../providers/app_session_provider.dart';
 import '../services/data_service.dart';
@@ -201,7 +201,7 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isSubmitted = _task.status == TaskStatus.submitted;
+    final isSubmitted = _task.status == TaskStatus.submitted || _task.status == TaskStatus.graded;
     
     return Scaffold(
       backgroundColor: Colors.white,
@@ -223,19 +223,27 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isSubmitted 
-                      ? Colors.green.withOpacity(0.1) 
-                      : const Color(0xFFEFF4FF),
+                  color: _task.status == TaskStatus.graded 
+                      ? Colors.green.withOpacity(0.1)
+                      : isSubmitted 
+                          ? Colors.blue.withOpacity(0.1) 
+                          : const Color(0xFFEFF4FF),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSubmitted ? Colors.green : const Color(0xFF2E6AFF),
+                    color: _task.status == TaskStatus.graded 
+                      ? Colors.green
+                      : isSubmitted ? Colors.blue : const Color(0xFF2E6AFF),
                     width: 1
                   )
                 ),
                 child: Text(
-                  isSubmitted ? 'Submitted' : 'Assigned',
+                  _task.status == TaskStatus.graded 
+                      ? 'Graded' 
+                      : isSubmitted ? 'Submitted' : 'Assigned',
                   style: TextStyle(
-                    color: isSubmitted ? Colors.green : const Color(0xFF2E6AFF),
+                    color: _task.status == TaskStatus.graded 
+                      ? Colors.green 
+                      : isSubmitted ? Colors.blue : const Color(0xFF2E6AFF),
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -368,9 +376,12 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      // Navigate to grading dashboard (placeholder)
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Grading Dashboard coming soon!')),
+                      context.push(
+                        '/grading/${_task.id}',
+                        extra: {
+                          'title': _task.title,
+                          'maxPoints': 100, // Default to 100 as Task model doesn't have it yet
+                        },
                       );
                     },
                     icon: const Icon(Icons.grading),
@@ -456,14 +467,55 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
           Text(notes),
         ],
         
-        const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: (_isUploading || _isSubmitting) ? null : _unsubmitAssignment,
-            child: const Text('Unsubmit'),
+        if (_task.submission != null && (_task.submission!['points'] != null || _task.submission!['grade'] != null)) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.green[200]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.grade, color: Colors.green),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Grade: ${_task.submission!['grade'] ?? _task.submission!['points']}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green
+                      ),
+                    ),
+                  ],
+                ),
+                if (_task.submission!['feedback'] != null && _task.submission!['feedback'].isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Divider(color: Colors.green),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Feedback: ${_task.submission!['feedback']}',
+                    style: TextStyle(color: Colors.green[900]),
+                  ),
+                ],
+              ],
+            ),
           ),
-        )
+        ],
+
+        const SizedBox(height: 20),
+        if (_task.status != TaskStatus.graded)
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: (_isUploading || _isSubmitting) ? null : _unsubmitAssignment,
+              child: const Text('Unsubmit'),
+            ),
+          )
       ],
     );
   }

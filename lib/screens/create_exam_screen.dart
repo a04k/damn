@@ -1,0 +1,672 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
+import '../services/data_service.dart';
+
+class CreateExamScreen extends ConsumerStatefulWidget {
+  final String courseId;
+
+  const CreateExamScreen({super.key, required this.courseId});
+
+  @override
+  ConsumerState<CreateExamScreen> createState() => _CreateExamScreenState();
+}
+
+class _CreateExamScreenState extends ConsumerState<CreateExamScreen> {
+  final _formKey = GlobalKey<FormState>();
+  
+  // Basic Info
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  DateTime _examDate = DateTime.now().add(const Duration(days: 1));
+  TimeOfDay _examTime = const TimeOfDay(hour: 10, minute: 0);
+  int _durationMinutes = 60;
+  
+  // Questions
+  final List<Map<String, dynamic>> _questions = [];
+  
+  // Settings
+  bool _shuffleQuestions = false;
+  bool _showResultsImmediately = false;
+  bool _isPublished = false;
+  
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create Exam'),
+      ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildBasicInfoSection(),
+                const SizedBox(height: 24),
+                _buildQuestionsSection(),
+                const SizedBox(height: 24),
+                _buildSettingsSection(),
+                const SizedBox(height: 32),
+                _buildSubmitButton(),
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Widget _buildBasicInfoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Exam Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _titleController,
+          decoration: const InputDecoration(
+            labelText: 'Exam Title',
+            border: OutlineInputBorder(),
+          ),
+          validator: (v) => v == null || v.isEmpty ? 'Title is required' : null,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _descriptionController,
+          decoration: const InputDecoration(
+            labelText: 'Description (Instructions)',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _examDate,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (date != null) {
+                    setState(() => _examDate = date);
+                  }
+                },
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Date',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.calendar_today),
+                  ),
+                  child: Text(DateFormat('MMM d, y').format(_examDate)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: InkWell(
+                onTap: () async {
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: _examTime,
+                  );
+                  if (time != null) {
+                    setState(() => _examTime = time);
+                  }
+                },
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Time',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.access_time),
+                  ),
+                  child: Text(_examTime.format(context)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<int>(
+          value: _durationMinutes,
+          decoration: const InputDecoration(
+            labelText: 'Duration',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.timer),
+          ),
+          items: [30, 45, 60, 90, 120, 180].map((m) => DropdownMenuItem(
+            value: m,
+            child: Text('$m minutes'),
+          )).toList(),
+          onChanged: (v) => setState(() => _durationMinutes = v!),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildQuestionsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Questions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('${_questions.length} questions • ${_calculateTotalPoints()} pts', 
+              style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (_questions.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.quiz_outlined, size: 48, color: Colors.grey[400]),
+                  const SizedBox(height: 12),
+                  Text('No questions added yet', 
+                    style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                  const SizedBox(height: 4),
+                  Text('Click "Add Question" to start building your exam',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                ],
+              ),
+            ),
+          )
+        else
+          ReorderableListView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (oldIndex < newIndex) {
+                  newIndex -= 1;
+                }
+                final item = _questions.removeAt(oldIndex);
+                _questions.insert(newIndex, item);
+              });
+            },
+            children: [
+              for (int i = 0; i < _questions.length; i++)
+                _buildQuestionCard(i, _questions[i]),
+            ],
+          ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _showAddQuestionDialog,
+            icon: const Icon(Icons.add),
+            label: const Text('Add Question'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuestionCard(int index, Map<String, dynamic> question) {
+    return Card(
+      key: ValueKey(question['id'] ?? index), // Use ID if available, else index
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue[50], 
+          child: Text('${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+        ),
+        title: Text(question['text'], maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text('${question['type']} • ${question['points']} pts'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.grey),
+              onPressed: () => _editQuestion(index),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () => setState(() => _questions.removeAt(index)),
+            ),
+            const Icon(Icons.drag_handle, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildSettingsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Exam Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        SwitchListTile(
+          title: const Text('Shuffle Questions'),
+          subtitle: const Text('Randomize question order for each student'),
+          value: _shuffleQuestions,
+          onChanged: (v) => setState(() => _shuffleQuestions = v),
+          contentPadding: EdgeInsets.zero,
+        ),
+        SwitchListTile(
+          title: const Text('Show Results Immediately'),
+          subtitle: const Text('Allow students to see their score after submission'),
+          value: _showResultsImmediately,
+          onChanged: (v) => setState(() => _showResultsImmediately = v),
+          contentPadding: EdgeInsets.zero,
+        ),
+        SwitchListTile(
+          title: const Text('Publish Immediately'),
+          subtitle: const Text('Make visible to students now'),
+          value: _isPublished,
+          onChanged: (v) => setState(() => _isPublished = v),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _submitExam,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: const Color(0xFF2E6AFF),
+          foregroundColor: Colors.white,
+        ),
+        child: const Text('Create Exam', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+  
+  int _calculateTotalPoints() {
+    return _questions.fold(0, (sum, q) => sum + (q['points'] as int? ?? 0));
+  }
+  
+  void _showAddQuestionDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Select Question Type', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.list, color: Colors.blue),
+              title: const Text('Multiple Choice'),
+              onTap: () {
+                Navigator.pop(context);
+                _openQuestionEditor(type: 'MCQ');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.check_circle_outline, color: Colors.green),
+              title: const Text('True / False'),
+              onTap: () {
+                Navigator.pop(context);
+                _openQuestionEditor(type: 'TRUE_FALSE');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.short_text, color: Colors.orange),
+              title: const Text('Short Answer'),
+              onTap: () {
+                Navigator.pop(context);
+                _openQuestionEditor(type: 'TEXT');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  void _editQuestion(int index) {
+    _openQuestionEditor(
+      type: _questions[index]['type'],
+      initialData: _questions[index],
+      editIndex: index,
+    );
+  }
+  
+  void _openQuestionEditor({required String type, Map<String, dynamic>? initialData, int? editIndex}) {
+    showDialog(
+      context: context,
+      builder: (context) => _QuestionEditorDialog(
+        type: type,
+        initialData: initialData,
+        onSave: (question) {
+          setState(() {
+            if (editIndex != null) {
+              _questions[editIndex] = question;
+            } else {
+              _questions.add(question);
+            }
+          });
+        },
+      ),
+    );
+  }
+  
+  Future<void> _submitExam() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_questions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add at least one question')));
+      return;
+    }
+    
+    setState(() => _isLoading = true);
+    
+    final examDateTime = DateTime(
+      _examDate.year,
+      _examDate.month,
+      _examDate.day,
+      _examTime.hour,
+      _examTime.minute,
+    );
+    
+    final success = await DataService.createExam(
+      courseId: widget.courseId,
+      title: _titleController.text,
+      description: _descriptionController.text,
+      examDate: examDateTime,
+      maxPoints: _calculateTotalPoints(),
+      questions: _questions,
+      settings: {
+        'durationMinutes': _durationMinutes,
+        'shuffleQuestions': _shuffleQuestions,
+        'showResultsImmediately': _showResultsImmediately,
+      },
+      published: _isPublished,
+    );
+    
+    setState(() => _isLoading = false);
+    
+    if (success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Exam created successfully!')));
+        Navigator.pop(context, true);
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to create exam')));
+      }
+    }
+  }
+}
+
+class _QuestionEditorDialog extends StatefulWidget {
+  final String type;
+  final Map<String, dynamic>? initialData;
+  final Function(Map<String, dynamic>) onSave;
+
+  const _QuestionEditorDialog({required this.type, this.initialData, required this.onSave});
+
+  @override
+  State<_QuestionEditorDialog> createState() => _QuestionEditorDialogState();
+}
+
+class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
+  late TextEditingController _textController;
+  late TextEditingController _pointsController;
+  List<TextEditingController> _optionControllers = [];
+  String? _correctAnswer;
+  String? _imageUrl;
+  bool _isLoadingImage = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController = TextEditingController(text: widget.initialData?['text'] ?? '');
+    _pointsController = TextEditingController(text: (widget.initialData?['points'] ?? 5).toString());
+    _correctAnswer = widget.initialData?['correctAnswer']?.toString();
+    _imageUrl = widget.initialData?['imageUrl'];
+    
+    if (widget.type == 'MCQ') {
+      final options = widget.initialData?['options'] as List?;
+      if (options != null) {
+        _optionControllers = options.map((o) => TextEditingController(text: o.toString())).toList();
+      } else {
+        _optionControllers = [TextEditingController(), TextEditingController()]; // Start with 2 empty options
+      }
+    } else if (widget.type == 'TRUE_FALSE') {
+      // Correct answer is 'true' or 'false' boolean string
+      if (_correctAnswer == null) _correctAnswer = 'true';
+    }
+  }
+
+  Future<void> _pickImage() async {
+    setState(() => _isLoadingImage = true);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.bytes != null) {
+        final file = result.files.single;
+        final url = await DataService.uploadFile(file.bytes!, file.name);
+        
+        if (url != null) {
+          setState(() {
+            _imageUrl = url;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload image: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingImage = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.initialData == null ? 'Add ${widget.type} Question' : 'Edit Question'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _textController,
+              decoration: const InputDecoration(labelText: 'Question Text', border: OutlineInputBorder()),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 12),
+            
+            // Image Upload Section
+            if (_imageUrl != null)
+              Stack(
+                children: [
+                   Container(
+                     height: 150,
+                     width: double.infinity,
+                     decoration: BoxDecoration(
+                       border: Border.all(color: Colors.grey[300]!),
+                       borderRadius: BorderRadius.circular(8),
+                     ),
+                     child: ClipRRect(
+                       borderRadius: BorderRadius.circular(8),
+                       child: Image.network(_imageUrl!, fit: BoxFit.cover),
+                     ),
+                   ),
+                   Positioned(
+                     top: 4,
+                     right: 4,
+                     child: GestureDetector(
+                       onTap: () => setState(() => _imageUrl = null),
+                       child: Container(
+                         padding: const EdgeInsets.all(4),
+                         decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                         child: const Icon(Icons.close, size: 16, color: Colors.black),
+                       ),
+                     ),
+                   ),
+                ],
+              )
+            else
+              OutlinedButton.icon(
+                onPressed: _isLoadingImage ? null : _pickImage,
+                icon: _isLoadingImage 
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.image),
+                label: Text(_isLoadingImage ? 'Uploading...' : 'Add Image'),
+                style: OutlinedButton.styleFrom(
+                   minimumSize: const Size(double.infinity, 44),
+                ),
+              ),
+              
+            const SizedBox(height: 12),
+
+            TextField(
+              controller: _pointsController,
+              decoration: const InputDecoration(labelText: 'Points', border: OutlineInputBorder()),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            if (widget.type == 'MCQ') ...[
+              const Text('Options', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              ...List.generate(_optionControllers.length, (index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    children: [
+                      Radio<String>(
+                        value: index.toString(), // Store index as correct answer for simplicity? Or the text? 
+                        // Let's store the actual text or index. Index is safer if text changes.
+                        // But Data model plan said "text". Let's stick to text or index. 0-based index string "0", "1".
+                        groupValue: _correctAnswer,
+                        onChanged: (v) => setState(() => _correctAnswer = v),
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: _optionControllers[index],
+                          decoration: InputDecoration(
+                            hintText: 'Option ${index + 1}',
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.remove_circle_outline, color: Colors.grey),
+                        onPressed: () {
+                          if (_optionControllers.length > 2) {
+                            setState(() {
+                              _optionControllers.removeAt(index);
+                              // Reset correct answer if invalid
+                              if (_correctAnswer == index.toString()) _correctAnswer = null;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              TextButton.icon(
+                onPressed: () => setState(() => _optionControllers.add(TextEditingController())),
+                icon: const Icon(Icons.add),
+                label: const Text('Add Option'),
+              ),
+            ] else if (widget.type == 'TRUE_FALSE') ...[
+              const Text('Correct Answer:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('True'),
+                      value: 'true',
+                      groupValue: _correctAnswer,
+                      onChanged: (v) => setState(() => _correctAnswer = v),
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('False'),
+                      value: 'false',
+                      groupValue: _correctAnswer,
+                      onChanged: (v) => setState(() => _correctAnswer = v),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        ElevatedButton(
+          onPressed: _save,
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+  
+  void _save() {
+    if (_textController.text.isEmpty) return;
+    
+    final question = {
+      'id': widget.initialData?['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(), // simple ID
+      'type': widget.type,
+      'text': _textController.text,
+      'imageUrl': _imageUrl,
+      'points': int.tryParse(_pointsController.text) ?? 0,
+    };
+    
+    if (widget.type == 'MCQ') {
+      final options = _optionControllers.map((c) => c.text).where((t) => t.isNotEmpty).toList();
+      if (options.length < 2) return; // minimal validation
+      
+      question['options'] = options;
+      // If _correctAnswer is an index string "0", map it to options[0]? 
+      // Actually plan said "correctAnswer": "4".
+      // Let's store the index for robustness if the plan allows, OR the value.
+      // If I store index, the backend grader must align.
+      // The plan example: "correctAnswer": "4". This is ambiguously an option value or index? "1", "2", "3" options... 4 is likely the value "4".
+      // Let's store the actual text value of the correct option for clarity, OR the index if we want position independence.
+      // Given the example options ["3", "4", "5"], it's likely the value.
+      
+      if (_correctAnswer != null) {
+        final idx = int.tryParse(_correctAnswer!);
+        if (idx != null && idx < options.length) {
+           question['correctAnswer'] = options[idx]; 
+        }
+      }
+    } else if (widget.type == 'TRUE_FALSE') {
+      question['correctAnswer'] = _correctAnswer;
+    }
+    
+    widget.onSave(question);
+    Navigator.pop(context);
+  }
+}

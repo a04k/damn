@@ -431,6 +431,9 @@ class DataService {
     required String taskId,
     String? fileUrl,
     String? notes,
+    Map<String, dynamic>? answers,
+    List<Map<String, dynamic>>? snapshots,
+    DateTime? startedAt,
   }) async {
     try {
       final response = await http.post(
@@ -439,6 +442,9 @@ class DataService {
         body: jsonEncode({
           'fileUrl': fileUrl,
           'notes': notes,
+          if (answers != null) 'answers': answers,
+          if (snapshots != null) 'snapshots': snapshots,
+          if (startedAt != null) 'startedAt': startedAt.toIso8601String(),
         }),
       );
       return response.statusCode == 200;
@@ -458,6 +464,47 @@ class DataService {
       return response.statusCode == 200;
     } catch (e) {
       print('[DataService] Unsubmit task error: $e');
+      return false;
+    }
+  }
+
+  /// Get submissions for a task (Professor)
+  static Future<List<Map<String, dynamic>>> getTaskSubmissions(String taskId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/submissions'),
+        headers: ApiConfig.authHeaders,
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(data['submissions']);
+      }
+      return [];
+    } catch (e) {
+      print('[DataService] Get submissions error: $e');
+      return [];
+    }
+  }
+
+  /// Grade a submission (Professor)
+  static Future<bool> gradeSubmission({
+    required String submissionId,
+    required double points,
+    String? feedback,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/tasks/submissions/$submissionId/grade'),
+        headers: ApiConfig.authHeaders,
+        body: jsonEncode({
+          'points': points,
+          'feedback': feedback,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('[DataService] Grade submission error: $e');
       return false;
     }
   }
@@ -724,6 +771,9 @@ class DataService {
     required DateTime examDate,
     int maxPoints = 100,
     List<String>? attachments,
+    List<dynamic>? questions,
+    Map<String, dynamic>? settings,
+    bool? published,
   }) async {
     try {
       final Map<String, dynamic> body = {
@@ -733,6 +783,9 @@ class DataService {
         'examDate': examDate.toIso8601String(),
         'points': maxPoints,
         if (attachments != null) 'attachments': attachments,
+        if (questions != null) 'questions': questions,
+        if (settings != null) 'settings': settings,
+        if (published != null) 'published': published,
       };
       
       body.removeWhere((key, value) => value == null);

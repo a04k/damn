@@ -14,27 +14,42 @@ const logger = require('../utils/logger');
 /**
  * Format course for response
  */
-const formatCourse = (course) => {
+const formatCourse = (course, studentId = null) => {
   // Separate tasks into assignments and exams
   const tasks = course.tasks || [];
-  const assignments = tasks.filter(t => t.taskType === 'ASSIGNMENT' || t.taskType === 'LAB').map(t => ({
-    id: t.id,
-    title: t.title,
-    description: t.description || '',
-    dueDate: t.dueDate,
-    maxScore: t.maxPoints || 100,
-    isSubmitted: false,
-    attachments: t.attachments || []
-  }));
   
-  const exams = tasks.filter(t => t.taskType === 'EXAM' || t.taskType === 'QUIZ').map(t => ({
-    id: t.id,
-    title: t.title,
-    date: t.dueDate || t.startDate,
-    format: t.taskType === 'QUIZ' ? 'Quiz' : 'Exam',
-    gradingBreakdown: `${t.maxPoints} points`,
-    attachments: t.attachments || []
-  }));
+  const assignments = tasks.filter(t => t.taskType === 'ASSIGNMENT' || t.taskType === 'LAB').map(t => {
+    // Find submission for this student if studentId is provided
+    const submission = studentId && t.submissions ? t.submissions.find(s => s.studentId === studentId) : null;
+    
+    return {
+      id: t.id,
+      title: t.title,
+      description: t.description || '',
+      dueDate: t.dueDate,
+      maxScore: t.maxPoints || 100,
+      isSubmitted: !!submission && submission.status !== 'PENDING',
+      attachments: t.attachments || [],
+      // Add grade and status info if available
+      grade: submission ? (submission.grade || submission.points) : null,
+      status: submission ? submission.status : 'PENDING'
+    };
+  });
+  
+  const exams = tasks.filter(t => t.taskType === 'EXAM' || t.taskType === 'QUIZ').map(t => {
+    const submission = studentId && t.submissions ? t.submissions.find(s => s.studentId === studentId) : null;
+    return {
+      id: t.id,
+      title: t.title,
+      date: t.dueDate || t.startDate,
+      format: t.taskType === 'QUIZ' ? 'Quiz' : 'Exam',
+      gradingBreakdown: `${t.maxPoints} points`,
+      attachments: t.attachments || [],
+      // Add status info
+      isSubmitted: !!submission && submission.status !== 'PENDING',
+      status: submission ? submission.status : 'PENDING'
+    };
+  });
 
   return {
     id: course.id,
@@ -143,7 +158,13 @@ router.get('/:id',
             orderBy: [{ weekNumber: 'asc' }, { orderIndex: 'asc' }]
           },
           tasks: {
-            orderBy: { dueDate: 'asc' }
+            orderBy: { dueDate: 'asc' },
+            include: {
+              // Include submissions only for the current user if logged in
+              submissions: req.user ? {
+                where: { studentId: req.user.id }
+              } : false
+            }
           },
           _count: {
             select: { 
@@ -161,7 +182,7 @@ router.get('/:id',
 
       res.json({
         success: true,
-        course: formatCourse(course)
+        course: formatCourse(course, req.user ? req.user.id : null)
       });
     } catch (error) {
       next(error);

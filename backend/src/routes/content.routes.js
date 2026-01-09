@@ -219,7 +219,7 @@ router.post('/exam',
   ],
   async (req, res, next) => {
     try {
-      const { courseId, title, description, examDate, points = 100 } = req.body;
+      const { courseId, title, description, examDate, points = 100, questions, settings, published = false, attachments } = req.body;
 
       // Verify instructor
       const isInstructor = await prisma.courseInstructor.findFirst({
@@ -251,7 +251,10 @@ router.post('/exam',
           maxPoints: points,
           attachments,
           courseId,
-          createdById: req.user.id
+          createdById: req.user.id,
+          questions: questions || [],
+          settings: settings || {},
+          published: published
         }
       });
 

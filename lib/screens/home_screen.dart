@@ -10,6 +10,7 @@ import '../models/user.dart';
 import '../models/task.dart';
 import 'assignment_detail_screen.dart';
 import 'TaskPages/Taskdetails.dart';
+import 'exam_runner_screen.dart';
 
 import '../widgets/loading_shimmer.dart';
 
@@ -620,8 +621,25 @@ class _TaskItem extends StatelessWidget {
           builder: (context) => AssignmentDetailScreen(task: task),
         ),
       );
+      // Check if already submitted
+      if (task.status == TaskStatus.completed || task.status == TaskStatus.graded) {
+         String submittedMessage = 'You have already submitted this exam.';
+         if (task.grade != null && task.grade != 'graded') {
+           submittedMessage += ' Grade: ${task.grade}';
+         }
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text(submittedMessage)),
+         );
+         return;
+      }
+      
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          builder: (context) => ExamRunnerScreen(taskId: task.id, courseId: task.courseId ?? ''),
+        ),
+      );
     } else {
-      // For personal tasks, exams, labs - go to task details
+      // For personal tasks, labs - go to task details
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => TaskDetailsPage(task: task),

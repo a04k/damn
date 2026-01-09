@@ -6,6 +6,9 @@ import '../providers/course_provider.dart';
 import '../models/course.dart';
 import '../models/task.dart';
 import 'assignment_detail_screen.dart';
+import 'create_exam_screen.dart';
+import 'exam_runner_screen.dart';
+import '../providers/app_session_provider.dart';
 
 class CourseDetailScreen extends ConsumerStatefulWidget {
   final String courseId;
@@ -589,10 +592,15 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
 
     return Column(
       children: course.assignments.map((a) {
+        final isGraded = a.status == 'GRADED' || a.grade != null;
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          color: isGraded ? Colors.green[50] : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: isGraded ? BorderSide(color: Colors.green[200]!) : BorderSide.none,
+          ),
           child: InkWell(
             onTap: () {
               Navigator.push(
@@ -604,7 +612,12 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                       title: a.title,
                       subject: course.name,
                       dueDate: a.dueDate,
-                      status: a.isSubmitted ? TaskStatus.submitted : TaskStatus.pending,
+                      status: a.status == 'GRADED' 
+                          ? TaskStatus.graded 
+                          : a.isSubmitted ? TaskStatus.submitted : TaskStatus.pending,
+                      submission: (a.grade != null || a.status == 'GRADED') 
+                          ? {'grade': a.grade, 'points': a.grade} 
+                          : null,
                       priority: TaskPriority.medium,
                       description: a.description,
                       createdAt: DateTime.now(),
@@ -630,21 +643,35 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
-                      Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF4FF),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                              color: const Color(0xFF2E6AFF).withOpacity(0.15)),
-                        ),
-                        child: Text('${a.maxScore} pts',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12,
-                                color: Color(0xFF2E6AFF))),
-                      )
+                      if (a.status == 'GRADED' && a.grade != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.green[200]!),
+                          ),
+                          child: Text('${a.grade} pts',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                  color: Colors.green[700])),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF4FF),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                                color: const Color(0xFF2E6AFF).withOpacity(0.15)),
+                          ),
+                          child: Text('${a.maxScore} pts',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                  color: Color(0xFF2E6AFF))),
+                        )
                     ],
                   ),
 
@@ -682,7 +709,12 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
 
   // ---------- Exams section ----------
   Widget _buildExamsSection(Course course) {
-    if (course.exams.isEmpty) {
+    // Check if current user is a professor using the session state directly or currentUserProvider
+    final sessionState = ref.watch(appSessionControllerProvider);
+    final isProfessor = sessionState is AppSessionAuthenticated && sessionState.user.isProfessor;
+    
+    // If empty and not professor, show empty state
+    if (course.exams.isEmpty && !isProfessor) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 28),
         child: Center(
@@ -692,33 +724,125 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
     }
 
     return Column(
-      children: course.exams.map((e) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.shade200),
+      children: [
+        if (isProfessor)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CreateExamScreen(courseId: widget.courseId),
+                    ),
+                  );
+                  if (result == true) {
+                    ref.invalidate(courseByIdProvider(widget.courseId));
+                  }
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Add Exam'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2E6AFF),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(e.title,
-                  style: const TextStyle(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              Text('Date: ${_formatDate(e.date)}',
-                  style: TextStyle(color: Colors.grey.shade600)),
-              const SizedBox(height: 6),
-              Text('Format: ${e.format}',
-                  style: TextStyle(color: Colors.grey.shade600)),
-              const SizedBox(height: 6),
-              Text('Grading: ${e.gradingBreakdown}',
-                  style: TextStyle(color: Colors.grey.shade600)),
-            ],
+          
+        ...course.exams.map((e) {
+          final isSubmitted = e.isSubmitted;
+          final isGraded = e.status == 'GRADED';
+          
+          return InkWell(
+            onTap: () {
+              if (isProfessor) {
+                 context.push(
+                    '/grading/${e.id}',
+                    extra: {
+                      'title': e.title,
+                      'maxPoints': 100 // We might want to pass real max points if available in Exam model
+                    }
+                 );
+              } else {
+                if (isSubmitted) {
+                    String msg = 'You have already submitted this exam.';
+                    if (e.status == 'GRADED' && e.grade != null) {
+                       msg += ' Grade: ${e.grade}';
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(msg)),
+                    );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ExamRunnerScreen(taskId: e.id, courseId: widget.courseId)),
+                  );
+                }
+              }
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isSubmitted ? Colors.green[50] : Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isSubmitted ? Colors.green[200]! : Colors.grey.shade200
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(e.title,
+                            style: const TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                      if (isSubmitted)
+                        Chip(
+                          label: Text(isGraded ? 'Graded' : 'Submitted'),
+                          backgroundColor: Colors.green[100],
+                          labelStyle: TextStyle(color: Colors.green[900], fontSize: 12),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Date: ${_formatDate(e.date)}',
+                      style: TextStyle(color: Colors.grey.shade600)),
+                  const SizedBox(height: 6),
+                  Text('Format: ${e.format}',
+                      style: TextStyle(color: Colors.grey.shade600)),
+                  const SizedBox(height: 6),
+                  Text('Grading: ${e.gradingBreakdown}',
+                      style: TextStyle(color: Colors.grey.shade600)),
+                ],
+              ),
+            ),
+          );
+        }),
+        
+        if (course.exams.isEmpty && isProfessor)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: Text(
+                'No exams scheduled yet',
+                 style: TextStyle(color: Colors.grey.shade500),
+              ),
+            ),
           ),
-        );
-      }).toList(),
+      ],
     );
   }
 
