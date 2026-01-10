@@ -29,6 +29,7 @@ import 'screens/guest/guest_dashboard_shell.dart';
 import 'screens/guest/guest_home_screen.dart';
 import 'screens/adaptive_dashboard.dart';
 import 'screens/grading_dashboard.dart';
+import 'screens/create_exam_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -186,6 +187,13 @@ class _StudentDashboardAppState extends ConsumerState<StudentDashboardApp> {
             GoRoute(
               path: '/my-courses',
               builder: (context, state) => const CoursesListScreen(),
+            ),
+            GoRoute(
+              path: '/create-exam',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>?;
+                return CreateExamScreen(courseId: extra?['courseId']);
+              },
             ),
             GoRoute(
               path: '/grading/:taskId',

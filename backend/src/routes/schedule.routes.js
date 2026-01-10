@@ -25,7 +25,7 @@ router.get('/upcoming',
       // Easier to copy logic or make a shared service function.
       // For now, duplicate specific logic for safety and speed.
 
-       const where = {
+      const where = {
         userId: req.user.id,
         startTime: {
           gte: startDate,
@@ -37,7 +37,7 @@ router.get('/upcoming',
         where,
         orderBy: { startTime: 'asc' }
       });
-      
+
       // Also get course schedule for enrolled courses
       const enrollments = await prisma.enrollment.findMany({
         where: { userId: req.user.id, status: 'ENROLLED' },
@@ -57,47 +57,73 @@ router.get('/upcoming',
         }
       });
 
+      // Get courses where user is instructor
+      const teaching = await prisma.courseInstructor.findMany({
+        where: { userId: req.user.id },
+        include: {
+          course: {
+            include: {
+              scheduleSlots: true,
+              instructors: {
+                include: {
+                  user: {
+                    select: { name: true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Combine and deduplicate courses
+      const allScheduledCourses = [
+        ...enrollments.map(e => e.course),
+        ...teaching.map(t => t.course)
+      ];
+      const uniqueCourses = [...new Map(allScheduledCourses.map(item => [item.id, item])).values()];
+
       const courseEvents = [];
       const today = new Date();
       // Calculate relevant dates within range
-      
+
       // Simple logic: iterate days in range
       for (let i = 0; i < days; i++) {
         const loopDate = new Date(today);
         loopDate.setDate(today.getDate() + i);
         const dayName = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'][loopDate.getDay()];
-        
-        for (const enrollment of enrollments) {
-          for (const slot of enrollment.course.scheduleSlots) {
-             if (slot.dayOfWeek === dayName) {
-                const [startHour, startMin] = slot.startTime.split(':').map(Number);
-                const [endHour, endMin] = slot.endTime.split(':').map(Number);
-                
-                const startTime = new Date(loopDate);
-                startTime.setHours(startHour, startMin, 0, 0);
-                
-                const endTime = new Date(loopDate);
-                endTime.setHours(endHour, endMin, 0, 0);
-                
-                 const instructor = enrollment.course.instructors.find(ins => ins.isPrimary)?.user?.name ||
-                                    enrollment.course.instructors[0]?.user?.name || 'TBA';
 
-                 courseEvents.push({
-                    id: `${enrollment.course.id}-${slot.id}-${loopDate.getTime()}`,
-                    title: `${enrollment.course.code}: ${enrollment.course.name}`,
-                    eventType: 'LECTURE',
-                    startTime,
-                    endTime,
-                    location: slot.location,
-                    instructor,
-                    isRecurring: true,
-                    courseId: enrollment.course.id
-                 });
-             }
+        for (const course of uniqueCourses) {
+          for (const slot of course.scheduleSlots) {
+            if (slot.dayOfWeek === dayName) {
+              const [startHour, startMin] = slot.startTime.split(':').map(Number);
+              const [endHour, endMin] = slot.endTime.split(':').map(Number);
+
+              const startTime = new Date(loopDate);
+              startTime.setHours(startHour, startMin, 0, 0);
+
+              const endTime = new Date(loopDate);
+              endTime.setHours(endHour, endMin, 0, 0);
+
+              const instructor = course.instructors.find(ins => ins.isPrimary)?.user?.name ||
+                course.instructors[0]?.user?.name || 'TBA';
+
+              courseEvents.push({
+                id: `${course.id}-${slot.id}-${loopDate.getTime()}`,
+                title: `${course.code}: ${course.name}`,
+                eventType: 'LECTURE',
+                startTime,
+                endTime,
+                location: slot.location,
+                instructor,
+                isRecurring: true,
+                courseId: course.id
+              });
+            }
           }
         }
       }
-      
+
       // Determine what to return
       res.json({
         success: true,
@@ -168,52 +194,77 @@ router.get('/',
         }
       });
 
+      // Get courses where user is instructor
+      const teaching = await prisma.courseInstructor.findMany({
+        where: { userId: req.user.id },
+        include: {
+          course: {
+            include: {
+              scheduleSlots: true,
+              instructors: {
+                include: {
+                  user: {
+                    select: { name: true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Combine and deduplicate courses
+      const allScheduledCourses = [
+        ...enrollments.map(e => e.course),
+        ...teaching.map(t => t.course)
+      ];
+      const uniqueCourses = [...new Map(allScheduledCourses.map(item => [item.id, item])).values()];
+
       // Convert recurring course schedules to events for the requested range
       const courseEvents = [];
-      
+
       // Default to wider range (-30 to +60 days) to ensure calendar population
       const start = startDate ? new Date(startDate) : new Date(new Date().setDate(new Date().getDate() - 30));
       const end = endDate ? new Date(endDate) : new Date(new Date().setDate(new Date().getDate() + 60));
-      
+
       const daysMap = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
 
-      // logger.info(`Generating schedule for ${req.user.email} from ${start.toISOString()} to ${end.toISOString()}`);
       console.log(`Generating schedule for ${req.user.email} from ${start.toISOString()} to ${end.toISOString()}`);
-      console.log(`Found ${enrollments.length} enrollments`);
+      console.log(`Found ${uniqueCourses.length} courses with schedule`);
 
       // Loop through each day in the range
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-          const currentDayName = daysMap[d.getDay()];
-          
-          for (const enrollment of enrollments) {
-              for (const slot of enrollment.course.scheduleSlots) {
-                  if (slot.dayOfWeek === currentDayName) {
-                      const [startHour, startMin] = slot.startTime.split(':').map(Number);
-                      const [endHour, endMin] = slot.endTime.split(':').map(Number);
-                      
-                      const startTime = new Date(d);
-                      startTime.setHours(startHour, startMin, 0, 0);
-                      
-                      const endTime = new Date(d);
-                      endTime.setHours(endHour, endMin, 0, 0);
-                      
-                      const instructor = enrollment.course.instructors.find(i => i.isPrimary)?.user?.name ||
-                                        enrollment.course.instructors[0]?.user?.name || 'TBA';
+        const currentDayName = daysMap[d.getDay()];
 
-                      courseEvents.push({
-                          id: `${enrollment.course.id}-${slot.id}-${d.getTime()}`,
-                          title: `${enrollment.course.code}: ${enrollment.course.name}`,
-                          eventType: 'LECTURE',
-                          startTime,
-                          endTime,
-                          location: slot.location,
-                          instructor,
-                          isRecurring: true,
-                          courseId: enrollment.course.id
-                      });
-                  }
-              }
+        for (const course of uniqueCourses) {
+          for (const slot of course.scheduleSlots) {
+            if (slot.dayOfWeek === currentDayName) {
+              const [startHour, startMin] = slot.startTime.split(':').map(Number);
+              const [endHour, endMin] = slot.endTime.split(':').map(Number);
+
+              const startTime = new Date(d);
+              startTime.setHours(startHour, startMin, 0, 0);
+
+              const endTime = new Date(d);
+              endTime.setHours(endHour, endMin, 0, 0);
+
+              const instructor = course.instructors.find(i => i.isPrimary)?.user?.name ||
+                course.instructors[0]?.user?.name || 'TBA';
+
+              courseEvents.push({
+                id: `${course.id}-${slot.id}-${d.getTime()}`,
+                title: `${course.code}: ${course.name}`,
+                eventType: 'LECTURE',
+                startTime,
+                endTime,
+                location: slot.location,
+                instructor,
+                isRecurring: true,
+                courseId: course.id
+              });
+            }
           }
+        }
       }
 
       // Also add upcoming exams/assignments from tasks
@@ -221,11 +272,12 @@ router.get('/',
         where: {
           taskType: { in: ['EXAM', 'ASSIGNMENT'] },
           dueDate: { gte: new Date() },
-          course: {
-            enrollments: {
-              some: { userId: req.user.id, status: 'ENROLLED' }
-            }
-          }
+          OR: [
+            // User is enrolled
+            { course: { enrollments: { some: { userId: req.user.id, status: 'ENROLLED' } } } },
+            // OR User is creator (Professor)
+            { createdById: req.user.id }
+          ]
         },
         include: {
           course: {
@@ -233,7 +285,7 @@ router.get('/',
           }
         },
         orderBy: { dueDate: 'asc' },
-        take: 20
+        take: 50
       });
 
       const taskEvents = upcomingTasks.map(task => ({

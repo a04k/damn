@@ -162,7 +162,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     final eventsForDayAsync = ref.watch(eventsForDateProvider(_selectedWeekDay));
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -171,12 +171,12 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
               children: [
                 // Custom header
                 Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(24),
+                  color: const Color(0xFFF8F9FA),
+                  padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back),
+                        icon: const Icon(Icons.arrow_back, color: Color(0xFF002147)),
                         onPressed: () {
                           if (context.canPop()) {
                             context.pop();
@@ -190,7 +190,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
-                          color: Colors.black,
+                          color: Color(0xFF002147),
                         ),
                       ),
                       const Spacer(),
@@ -293,28 +293,38 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                             // Current time banner
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                gradient: LinearGradient(
-                                  colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary.withOpacity(0.8)],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
+                                color: const Color(0xFF002147),
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Row(
                                 children: [
-                                  Text('Current Time', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white)),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    DateFormat('h:mm a').format(DateTime.now()),
-                                    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                                  Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFDC800).withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(Icons.schedule, color: Color(0xFFFDC800), size: 28),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    DateFormat('EEEE, MMMM d, y').format(DateTime.now()),
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          DateFormat('h:mm a').format(DateTime.now()),
+                                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          DateFormat('EEEE, MMMM d').format(DateTime.now()),
+                                          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -586,13 +596,13 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
           return Container(
             margin: const EdgeInsets.all(4.0),
             alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
+            decoration: const BoxDecoration(
+              color: Color(0xFF002147),
               shape: BoxShape.circle,
             ),
             child: Text(
               '${day.day}',
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           );
         }
@@ -602,13 +612,13 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
             margin: const EdgeInsets.all(4.0),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: const Color(0xFFFDC800).withOpacity(0.2),
               shape: BoxShape.circle,
-              border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1),
+              border: Border.all(color: const Color(0xFFFDC800), width: 2),
             ),
             child: Text(
               '${day.day}',
-              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: Color(0xFF002147), fontWeight: FontWeight.bold),
             ),
           );
         }
@@ -635,6 +645,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
 
     return weekDays.map((day) {
       final isSelected = isSameDay(_selectedWeekDay, day);
+      final isToday = isSameDay(day, DateTime.now());
       return Expanded(
         child: GestureDetector(
           onTap: () {
@@ -646,15 +657,20 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
           child: AspectRatio(
             aspectRatio: 1.0,
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
               decoration: BoxDecoration(
-                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
-                borderRadius: BorderRadius.circular(10),
+                color: isSelected ? const Color(0xFF002147) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? Theme.of(context).colorScheme.primary : const Color(0xFFE5E7EB),
+                  color: isSelected 
+                      ? const Color(0xFF002147) 
+                      : isToday 
+                          ? const Color(0xFFFDC800)
+                          : const Color(0xFFE5E7EB),
+                  width: isToday && !isSelected ? 2 : 1,
                 ),
                 boxShadow: isSelected
-                    ? [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 6))]
+                    ? [BoxShadow(color: const Color(0xFF002147).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
                     : null,
               ),
               child: Column(
@@ -663,18 +679,18 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                   Text(
                     DateFormat('EEE').format(day),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : Colors.grey.shade600,
+                      color: isSelected ? Colors.white.withOpacity(0.8) : const Color(0xFF6B7280),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     DateFormat('d').format(day),
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: isSelected ? Colors.white : Colors.grey.shade600,
+                      color: isSelected ? Colors.white : const Color(0xFF002147),
                     ),
                   ),
                 ],

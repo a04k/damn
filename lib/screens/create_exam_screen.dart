@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:go_router/go_router.dart';
 import '../services/data_service.dart';
+import '../providers/app_session_provider.dart';
+import '../models/course.dart';
 
 class CreateExamScreen extends ConsumerStatefulWidget {
-  final String courseId;
+  final String? courseId;
 
-  const CreateExamScreen({super.key, required this.courseId});
+  const CreateExamScreen({super.key, this.courseId});
 
   @override
   ConsumerState<CreateExamScreen> createState() => _CreateExamScreenState();
@@ -15,6 +18,11 @@ class CreateExamScreen extends ConsumerStatefulWidget {
 
 class _CreateExamScreenState extends ConsumerState<CreateExamScreen> {
   final _formKey = GlobalKey<FormState>();
+  
+  // Courses for selection
+  List<Course> _courses = [];
+  String? _selectedCourseId;
+  bool _isLoadingCourses = true;
   
   // Basic Info
   final _titleController = TextEditingController();
@@ -32,20 +40,129 @@ class _CreateExamScreenState extends ConsumerState<CreateExamScreen> {
   bool _isPublished = false;
   
   bool _isLoading = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadCourses();
+  }
+  
+  Future<void> _loadCourses() async {
+    final user = ref.read(currentUserProvider).value;
+    if (user == null) {
+      setState(() => _isLoadingCourses = false);
+      return;
+    }
+    
+    try {
+      final courses = await DataService.getProfessorCourses(user.email);
+      if (mounted) {
+        setState(() {
+          _courses = courses;
+          _isLoadingCourses = false;
+          // If courseId was provided via widget, use it
+          if (widget.courseId != null) {
+            _selectedCourseId = widget.courseId;
+          } else if (courses.isNotEmpty) {
+            _selectedCourseId = courses.first.id;
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingCourses = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingCourses) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Create Exam'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    
+    if (_courses.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Create Exam'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.school_outlined, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                const Text(
+                  'No courses assigned',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Contact admin to get courses assigned to you.',
+                  style: TextStyle(color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Create Exam'),
+        title: const Text('Create Exam', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF002147),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          },
+        ),
       ),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF002147)))
         : Form(
             key: _formKey,
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                _buildCourseSelector(),
+                const SizedBox(height: 24),
                 _buildBasicInfoSection(),
                 const SizedBox(height: 24),
                 _buildQuestionsSection(),
@@ -53,10 +170,33 @@ class _CreateExamScreenState extends ConsumerState<CreateExamScreen> {
                 _buildSettingsSection(),
                 const SizedBox(height: 32),
                 _buildSubmitButton(),
-                const SizedBox(height: 40),
+                const SizedBox(height: 120), // Extra padding for bottom nav
               ],
             ),
           ),
+    );
+  }
+  
+  Widget _buildCourseSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Select Course', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          value: _selectedCourseId,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.school),
+          ),
+          items: _courses.map((c) => DropdownMenuItem(
+            value: c.id,
+            child: Text('${c.code} - ${c.name}', overflow: TextOverflow.ellipsis),
+          )).toList(),
+          onChanged: (v) => setState(() => _selectedCourseId = v),
+          validator: (v) => v == null ? 'Please select a course' : null,
+        ),
+      ],
     );
   }
 
@@ -251,33 +391,76 @@ class _CreateExamScreenState extends ConsumerState<CreateExamScreen> {
   }
   
   Widget _buildSettingsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Exam Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        SwitchListTile(
-          title: const Text('Shuffle Questions'),
-          subtitle: const Text('Randomize question order for each student'),
-          value: _shuffleQuestions,
-          onChanged: (v) => setState(() => _shuffleQuestions = v),
-          contentPadding: EdgeInsets.zero,
-        ),
-        SwitchListTile(
-          title: const Text('Show Results Immediately'),
-          subtitle: const Text('Allow students to see their score after submission'),
-          value: _showResultsImmediately,
-          onChanged: (v) => setState(() => _showResultsImmediately = v),
-          contentPadding: EdgeInsets.zero,
-        ),
-        SwitchListTile(
-          title: const Text('Publish Immediately'),
-          subtitle: const Text('Make visible to students now'),
-          value: _isPublished,
-          onChanged: (v) => setState(() => _isPublished = v),
-          contentPadding: EdgeInsets.zero,
-        ),
-      ],
+    // Check if there are any written/TEXT questions
+    final hasWrittenQuestions = _questions.any((q) => q['type'] == 'TEXT');
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.settings, color: Color(0xFF002147)),
+              SizedBox(width: 8),
+              Text('Exam Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Shuffle Questions'),
+            subtitle: const Text('Randomize question order for each student'),
+            value: _shuffleQuestions,
+            onChanged: (v) => setState(() => _shuffleQuestions = v),
+            contentPadding: EdgeInsets.zero,
+            activeColor: const Color(0xFF002147),
+          ),
+          // Only show if there are NO written questions (auto-grading only works for MCQ/True-False)
+          if (!hasWrittenQuestions)
+            SwitchListTile(
+              title: const Text('Show Results Immediately'),
+              subtitle: const Text('Allow students to see their score after submission'),
+              value: _showResultsImmediately,
+              onChanged: (v) => setState(() => _showResultsImmediately = v),
+              contentPadding: EdgeInsets.zero,
+              activeColor: const Color(0xFF002147),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3CD),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Color(0xFF856404), size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This exam contains written questions and requires manual grading.',
+                      style: TextStyle(color: Color(0xFF856404), fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          SwitchListTile(
+            title: const Text('Publish Immediately'),
+            subtitle: const Text('Make visible to students now'),
+            value: _isPublished,
+            onChanged: (v) => setState(() => _isPublished = v),
+            contentPadding: EdgeInsets.zero,
+            activeColor: const Color(0xFF002147),
+          ),
+        ],
+      ),
     );
   }
   
@@ -287,9 +470,10 @@ class _CreateExamScreenState extends ConsumerState<CreateExamScreen> {
       child: ElevatedButton(
         onPressed: _submitExam,
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          backgroundColor: const Color(0xFF2E6AFF),
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          backgroundColor: const Color(0xFF002147),
           foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: const Text('Create Exam', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       ),
@@ -303,40 +487,70 @@ class _CreateExamScreenState extends ConsumerState<CreateExamScreen> {
   void _showAddQuestionDialog() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Select Question Type', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.list, color: Colors.blue),
-              title: const Text('Multiple Choice'),
-              onTap: () {
-                Navigator.pop(context);
-                _openQuestionEditor(type: 'MCQ');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.check_circle_outline, color: Colors.green),
-              title: const Text('True / False'),
-              onTap: () {
-                Navigator.pop(context);
-                _openQuestionEditor(type: 'TRUE_FALSE');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.short_text, color: Colors.orange),
-              title: const Text('Short Answer'),
-              onTap: () {
-                Navigator.pop(context);
-                _openQuestionEditor(type: 'TEXT');
-              },
-            ),
-          ],
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Select Question Type', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF002147))),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.list, color: Colors.blue),
+                ),
+                title: const Text('Multiple Choice', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Students select one correct answer', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openQuestionEditor(type: 'MCQ');
+                },
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.check_circle_outline, color: Colors.green),
+                ),
+                title: const Text('True / False', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Students answer True or False', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openQuestionEditor(type: 'TRUE_FALSE');
+                },
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.edit_note, color: Colors.orange),
+                ),
+                title: const Text('Written Answer', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Free-text answer, requires manual grading', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openQuestionEditor(type: 'TEXT');
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );
@@ -387,7 +601,7 @@ class _CreateExamScreenState extends ConsumerState<CreateExamScreen> {
     );
     
     final success = await DataService.createExam(
-      courseId: widget.courseId,
+      courseId: _selectedCourseId!,
       title: _titleController.text,
       description: _descriptionController.text,
       examDate: examDateTime,
@@ -405,12 +619,27 @@ class _CreateExamScreenState extends ConsumerState<CreateExamScreen> {
     
     if (success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Exam created successfully!')));
-        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Exam created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Use GoRouter's go instead of Navigator.pop to avoid navigation stack issues
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home');
+        }
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to create exam')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to create exam. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -440,19 +669,29 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
     super.initState();
     _textController = TextEditingController(text: widget.initialData?['text'] ?? '');
     _pointsController = TextEditingController(text: (widget.initialData?['points'] ?? 5).toString());
-    _correctAnswer = widget.initialData?['correctAnswer']?.toString();
     _imageUrl = widget.initialData?['imageUrl'];
     
     if (widget.type == 'MCQ') {
       final options = widget.initialData?['options'] as List?;
       if (options != null) {
         _optionControllers = options.map((o) => TextEditingController(text: o.toString())).toList();
+        // Restore correct answer index if available
+        if (widget.initialData?['correctAnswerIndex'] != null) {
+          _correctAnswer = widget.initialData!['correctAnswerIndex'].toString();
+        } else if (widget.initialData?['correctAnswer'] != null) {
+          // Fallback: find index by matching the correct answer text
+          final correctText = widget.initialData!['correctAnswer'].toString();
+          final idx = options.indexWhere((o) => o.toString() == correctText);
+          if (idx >= 0) {
+            _correctAnswer = idx.toString();
+          }
+        }
       } else {
         _optionControllers = [TextEditingController(), TextEditingController()]; // Start with 2 empty options
       }
     } else if (widget.type == 'TRUE_FALSE') {
       // Correct answer is 'true' or 'false' boolean string
-      if (_correctAnswer == null) _correctAnswer = 'true';
+      _correctAnswer = widget.initialData?['correctAnswer']?.toString() ?? 'true';
     }
   }
 
@@ -618,6 +857,27 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
                   ),
                 ],
               ),
+            ] else if (widget.type == 'TEXT') ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Written answers are free-form text responses. You will grade these manually after students submit.',
+                        style: TextStyle(color: Colors.blue.shade700, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ],
         ),
@@ -633,38 +893,73 @@ class _QuestionEditorDialogState extends State<_QuestionEditorDialog> {
   }
   
   void _save() {
-    if (_textController.text.isEmpty) return;
+    // Validate question text
+    if (_textController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter question text'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    
+    // Validate points
+    final points = int.tryParse(_pointsController.text) ?? 0;
+    if (points <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Points must be greater than 0'), backgroundColor: Colors.red),
+      );
+      return;
+    }
     
     final question = {
-      'id': widget.initialData?['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(), // simple ID
+      'id': widget.initialData?['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
       'type': widget.type,
       'text': _textController.text,
       'imageUrl': _imageUrl,
-      'points': int.tryParse(_pointsController.text) ?? 0,
+      'points': points,
     };
     
     if (widget.type == 'MCQ') {
       final options = _optionControllers.map((c) => c.text).where((t) => t.isNotEmpty).toList();
-      if (options.length < 2) return; // minimal validation
+      
+      // Validate at least 2 options
+      if (options.length < 2) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('MCQ requires at least 2 options'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+      
+      // Validate correct answer is selected
+      if (_correctAnswer == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select the correct answer'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+      
+      final idx = int.tryParse(_correctAnswer!);
+      if (idx == null || idx >= options.length || options[idx].isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a valid correct answer'), backgroundColor: Colors.red),
+        );
+        return;
+      }
       
       question['options'] = options;
-      // If _correctAnswer is an index string "0", map it to options[0]? 
-      // Actually plan said "correctAnswer": "4".
-      // Let's store the index for robustness if the plan allows, OR the value.
-      // If I store index, the backend grader must align.
-      // The plan example: "correctAnswer": "4". This is ambiguously an option value or index? "1", "2", "3" options... 4 is likely the value "4".
-      // Let's store the actual text value of the correct option for clarity, OR the index if we want position independence.
-      // Given the example options ["3", "4", "5"], it's likely the value.
+      question['correctAnswer'] = options[idx];
+      question['correctAnswerIndex'] = idx; // Store index for editing
       
-      if (_correctAnswer != null) {
-        final idx = int.tryParse(_correctAnswer!);
-        if (idx != null && idx < options.length) {
-           question['correctAnswer'] = options[idx]; 
-        }
-      }
     } else if (widget.type == 'TRUE_FALSE') {
+      // Validate correct answer is selected
+      if (_correctAnswer == null || (_correctAnswer != 'true' && _correctAnswer != 'false')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select True or False as the correct answer'), backgroundColor: Colors.red),
+        );
+        return;
+      }
       question['correctAnswer'] = _correctAnswer;
     }
+    // TEXT type doesn't need correctAnswer - it's manually graded
     
     widget.onSave(question);
     Navigator.pop(context);

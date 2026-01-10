@@ -47,17 +47,16 @@ class _SelectCoursePageState extends ConsumerState<SelectCoursePage> {
 
   Future<void> _loadData() async {
     try {
-      // Load JSON data
-      final String jsonString = await rootBundle.loadString('assets/mock/departments.json');
-      final data = jsonDecode(jsonString);
+      // Load Departments and Levels from Backend
+      final metadata = await DataService.getDepartments();
       
-      // Load Courses from Backend using DataService
+      // Load Courses from Backend
       final courses = await DataService.getCourses();
 
       if (mounted) {
         setState(() {
-          _departments = List<Map<String, dynamic>>.from(data['departments']);
-          _levels = List<Map<String, dynamic>>.from(data['levels']);
+          _departments = List<Map<String, dynamic>>.from(metadata['departments'] ?? []);
+          _levels = List<Map<String, dynamic>>.from(metadata['levels'] ?? []);
           _allCourses = courses;
           _isLoading = false;
         });

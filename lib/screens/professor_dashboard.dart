@@ -86,28 +86,10 @@ class ProfessorDashboard extends ConsumerWidget {
                         )),
                         const SizedBox(width: 12),
                         Expanded(child: _ActionButton(
-                          icon: Icons.campaign_outlined,
-                          label: 'Announce',
+                          icon: Icons.fact_check_outlined,
+                          label: 'Create Exam',
                           color: const Color(0xFF8B5CF6),
-                          onTap: () => _showAnnouncementDialog(context, ref),
-                        )),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(child: _ActionButton(
-                          icon: Icons.calendar_today,
-                          label: 'Schedule',
-                          color: const Color(0xFFF59E0B),
-                          onTap: () => context.go('/schedule'),
-                        )),
-                        const SizedBox(width: 12),
-                        Expanded(child: _ActionButton(
-                          icon: Icons.school_outlined,
-                          label: 'Courses',
-                          color: const Color(0xFF3B82F6),
-                          onTap: () => context.go('/my-courses'),
+                          onTap: () => context.go('/create-exam'),
                         )),
                       ],
                     ),
@@ -157,7 +139,7 @@ class ProfessorDashboard extends ConsumerWidget {
                         onTap: () => context.go('/course/${courses[index].id}'),
                         onAddContent: () => context.go('/add-content'),
                       ),
-                      childCount: courses.length.clamp(0, 3),
+                      childCount: courses.length,
                     ),
                   ),
                 );

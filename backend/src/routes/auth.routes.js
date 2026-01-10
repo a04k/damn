@@ -88,8 +88,8 @@ router.post('/register',
       const hashedPassword = await bcrypt.hash(password, 12);
 
       // Generate student ID for students
-      const studentId = role === 'STUDENT' 
-        ? `STU${Date.now().toString().slice(-8)}` 
+      const studentId = role === 'STUDENT'
+        ? `STU${Date.now().toString().slice(-8)}`
         : null;
 
       // Create user
@@ -120,12 +120,22 @@ router.post('/register',
       });
 
       // Send verification email
-      await sendVerificationEmail(email, code, 'registration');
+      const emailResult = await sendVerificationEmail(email, code, 'registration');
+
+      if (!emailResult.success) {
+        // Rollback: Delete the user if email failed
+        await prisma.verificationCode.deleteMany({ where: { userId: user.id } });
+        await prisma.user.delete({ where: { id: user.id } });
+
+        // Log the specific error for debugging
+        logger.error(`Registration failed: Email not sent. ${emailResult.error}`);
+        throw new ApiError(500, `Failed to send verification email: ${emailResult.error || 'Check backend logs'}`);
+      }
 
       // Generate token
       const token = generateToken(user.id);
 
-      logger.info(`✅ User registered: ${email} (${role})`);
+      logger.info(`✅ User registered and email sent: ${email} (${role})`);
 
       res.status(201).json({
         success: true,
@@ -188,8 +198,8 @@ router.post('/login',
       // PATCH FIX: Ensure seeded users bypass onboarding if not set
       // AND regular users bypass it for now as requested
       if (!user.isOnboardingComplete) {
-         updateData.isOnboardingComplete = true;
-         user.isOnboardingComplete = true; // Update local obj for response
+        updateData.isOnboardingComplete = true;
+        user.isOnboardingComplete = true; // Update local obj for response
       }
 
       await prisma.user.update({

@@ -340,15 +340,7 @@ class _ExamRunnerScreenState extends ConsumerState<ExamRunnerScreen> {
                   
                   const SizedBox(height: 40),
                   
-                  // Attachments Section
-                  const Divider(),
-                  const SizedBox(height: 16),
-                  const Text('Additional Attachments (Optional)', style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  const Text('Upload any handwritten work or supplementary files here.', 
-                    style: TextStyle(color: Colors.grey, fontSize: 13)),
-                  const SizedBox(height: 12),
-                  _buildFileUploader(),
+                  // Attachments removed per user request
                 ],
               ),
             ),
@@ -370,19 +362,20 @@ class _ExamRunnerScreenState extends ConsumerState<ExamRunnerScreen> {
                 ],
               ),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Previous Button (or hidden spacers)
-                  if (_currentQuestionIndex > 0)
+                   // Previous Button
+                   if (_currentQuestionIndex > 0)
                     OutlinedButton.icon(
                       onPressed: () => setState(() => _currentQuestionIndex--),
                       icon: const Icon(Icons.arrow_back),
                       label: const Text('Previous'),
-                    ),
-                    
-                  const Spacer(),
-                  
-                  // Next / Submit Button
-                  if (_currentQuestionIndex < questions.length - 1)
+                    )
+                   else
+                    const SizedBox(width: 100), // Spacer for alignment
+
+                   // Next / Submit Button
+                   if (_currentQuestionIndex < questions.length - 1)
                     ElevatedButton.icon(
                       onPressed: () => setState(() => _currentQuestionIndex++),
                       icon: const Icon(Icons.arrow_forward),
@@ -393,7 +386,7 @@ class _ExamRunnerScreenState extends ConsumerState<ExamRunnerScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       ),
                     )
-                  else
+                   else
                     ElevatedButton.icon(
                       onPressed: _isSubmitting ? null : _submitExam,
                       icon: _isSubmitting 
@@ -618,35 +611,9 @@ class _ExamRunnerScreenState extends ConsumerState<ExamRunnerScreen> {
 
   Future<void> _submitExam({bool autoSubmit = false}) async {
     // If autoSubmit is true (timer ran out), we proceed even if incomplete
-    if (!autoSubmit) {
-      // STRICT VALIDATION: Check for un-answered questions
-      final questions = _task!.questions ?? [];
-      int? firstUnansweredIndex;
-      
-      for (int i = 0; i < questions.length; i++) {
-        final qId = questions[i]['id'] ?? i.toString();
-        // Check if answer exists and is not empty string
-        if (!_answers.containsKey(qId) || _answers[qId] == null || _answers[qId].toString().trim().isEmpty) {
-          firstUnansweredIndex = i;
-          break;
-        }
-      }
-
-      if (firstUnansweredIndex != null) {
-        // Show error and navigate
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Please answer Question ${firstUnansweredIndex + 1} before submitting.'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        setState(() {
-          _currentQuestionIndex = firstUnansweredIndex!;
-        });
-        return;
-      }
-    }
+    // Validation removed per user request - allow incomplete submission
+    // We only rely on autoSubmit flag for logging or toast nuance if needed
+    
     
     setState(() => _isSubmitting = true);
     

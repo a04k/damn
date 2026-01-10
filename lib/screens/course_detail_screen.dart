@@ -75,7 +75,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // small placeholders (kept for visual parity with screenshot)
+                        // Header row with back button and course code
                         Row(
                           children: [
                             IconButton(
@@ -89,20 +89,34 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                               },
                             ),
                             Container(
-                              width: 36,
-                              height: 36,
+                              width: 40,
+                              height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.menu_book_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 12),
                             Container(
-                              width: 60,
-                              height: 20,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.85),
-                                borderRadius: BorderRadius.circular(6),
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                course.code,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                           ],
@@ -278,33 +292,25 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
 
                             const SizedBox(width: 8),
 
-                            // CLICKABLE ROOM LINK (navigates to /navigate_screen)
+                            // Location Display (Non-clickable)
                             Flexible(
-                              child: GestureDetector(
-                                onTap: () {
-                                  // pass the room name to navigate screen via extra
-                                  context.push('/navigate_screen',
-                                      extra: location);
-                                },
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.location_on_outlined,
-                                        size: 18),
-                                    const SizedBox(width: 6),
-                                    Flexible(
-                                      child: Text(
-                                        location,
-                                        style: const TextStyle(
-                                          color: Colors.blue,
-                                          fontWeight: FontWeight.w600,
-                                          decoration: TextDecoration.underline,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.location_on_outlined,
+                                      size: 18),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      location,
+                                      style: TextStyle(
+                                        color: Colors.grey.shade700,
+                                        fontWeight: FontWeight.w500,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],

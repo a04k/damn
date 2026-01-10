@@ -663,9 +663,13 @@ class DataService {
   // ============ UPLOAD ============
   
   /// Upload file
-  static Future<String?> uploadFile(List<int> bytes, String filename) async {
+  /// [type] can be: 'profile', 'submission', 'content', 'lecture', 'attachment'
+  static Future<String?> uploadFile(List<int> bytes, String filename, {String? type}) async {
     try {
-      var request = http.MultipartRequest('POST', Uri.parse('${ApiConfig.baseUrl}/upload'));
+      final uploadUrl = type != null 
+          ? '${ApiConfig.baseUrl}/upload?type=$type'
+          : '${ApiConfig.baseUrl}/upload';
+      var request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
       
       final authHeader = ApiConfig.authHeaders['Authorization'];
       if (authHeader != null) {

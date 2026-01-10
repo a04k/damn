@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import '../../storage_services.dart';
-import 'email_service.dart';
+// import 'email_service.dart'; // Removed client-side email service
 
 class VerificationPage extends StatefulWidget {
   final String email;
@@ -28,7 +28,8 @@ class _VerificationPageState extends State<VerificationPage> {
   @override
   void initState() {
     super.initState();
-    _sendVerificationCode();
+    // Do not auto-send code on init, as registration already sends it.
+    // If coming from login (unverified), user can click Resend.
   }
 
   @override
@@ -45,44 +46,30 @@ class _VerificationPageState extends State<VerificationPage> {
   Future<void> _sendVerificationCode() async {
     setState(() => _isLoading = true);
     
-    // Generate 4-digit code
-    final code = (Random().nextInt(9000) + 1000).toString();
-    final type = widget.isPasswordReset ? 'password_reset' : 'registration';
-
-    // Store code in database first
     try {
-      final storeResponse = await http.post(
-        Uri.parse('$_baseUrl/auth/store-code'),
+      final type = widget.isPasswordReset ? 'PASSWORD_RESET' : 'REGISTRATION';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/resend-code'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': widget.email,
-          'code': code,
           'type': type,
         }),
       );
 
-      if (storeResponse.statusCode != 200) {
-        throw Exception('Failed to store code');
-      }
-
-      // Send code via email
-      final success = await EmailService.sendVerificationCode(
-        toEmail: widget.email,
-        code: code,
-      );
+      final data = jsonDecode(response.body);
 
       setState(() {
         _isLoading = false;
-        _codeSent = success;
+        _codeSent = response.statusCode == 200;
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success
-                ? 'Verification code sent to ${widget.email}'
-                : 'Failed to send code. Please try again.'),
-            backgroundColor: success ? Colors.green : Colors.red,
+            content: Text(data['message'] ?? (response.statusCode == 200 ? 'Verification code sent!' : 'Failed to send code')),
+            backgroundColor: response.statusCode == 200 ? Colors.green : Colors.red,
           ),
         );
       }
@@ -115,7 +102,7 @@ class _VerificationPageState extends State<VerificationPage> {
       final type = widget.isPasswordReset ? 'password_reset' : 'registration';
       
       final response = await http.post(
-        Uri.parse('$_baseUrl/auth/verify-code'),
+        Uri.parse('$_baseUrl/auth/verify'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': widget.email,

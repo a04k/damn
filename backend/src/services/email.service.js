@@ -1,160 +1,181 @@
 /**
- * Email Service using Nodemailer
+ * Email Service using Nodemailer (Production Ready)
  */
 const nodemailer = require('nodemailer');
 const logger = require('../utils/logger');
+require('dotenv').config();
 
-// Create transporter
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-};
+// ===============================
+// Create Nodemailer Transporter
+// ===============================
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT),
+  secure: false, // true for 465, false for 587
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
-let transporter = null;
-
-/**
- * Get or create email transporter
- */
-const getTransporter = () => {
-  if (!transporter) {
-    transporter = createTransporter();
+// Verify transporter on startup
+transporter.verify((error) => {
+  if (error) {
+    logger.error('❌ Email transporter error:', error);
+  } else {
+    logger.info('✅ Email transporter is ready');
   }
-  return transporter;
-};
+});
 
-/**
- * Send email
- */
+// ===============================
+// Base Send Email Function
+// ===============================
 const sendEmail = async ({ to, subject, text, html }) => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    logger.error('❌ Email configuration missing');
+    return { success: false, error: 'Email configuration missing' };
+  }
+
   try {
-    const info = await getTransporter().sendMail({
+    const info = await transporter.sendMail({
       from: `"College Guide" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       text,
-      html
+      html,
     });
 
-    logger.info(`📧 Email sent to ${to}: ${info.messageId}`);
+    logger.info(`✅ Email sent to ${to} (${info.messageId})`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    logger.error('Email send error:', error);
+    logger.error('❌ Email send failed:', error);
     return { success: false, error: error.message };
   }
 };
 
-/**
- * Send verification code email
- */
+// ===============================
+// Send Verification Email
+// ===============================
 const sendVerificationEmail = async (email, code, type = 'registration') => {
   const subjects = {
     registration: 'Verify Your Email - College Guide',
     password_reset: 'Reset Your Password - College Guide',
-    email_change: 'Confirm Email Change - College Guide'
+    email_change: 'Confirm Email Change - College Guide',
   };
 
   const messages = {
-    registration: `Welcome to College Guide! Your verification code is: ${code}. This code expires in 15 minutes.`,
-    password_reset: `Your password reset code is: ${code}. This code expires in 15 minutes.`,
-    email_change: `Your email change confirmation code is: ${code}. This code expires in 15 minutes.`
+    registration: `Welcome to College Guide! Your verification code is: ${code}.`,
+    password_reset: `Your password reset code is: ${code}.`,
+    email_change: `Your email change verification code is: ${code}.`,
   };
 
   return sendEmail({
     to: email,
     subject: subjects[type] || 'Verification Code - College Guide',
-    text: messages[type] || `Your verification code is: ${code}`,
+    text: `${messages[type]} This code expires in 15 minutes.`,
     html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-            .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-            .header { background: linear-gradient(135deg, #002147, #003A5D); padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
-            .header h1 { color: #FDC800; margin: 0; font-size: 24px; }
-            .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 12px 12px; }
-            .code { font-size: 36px; font-weight: bold; color: #002147; text-align: center; letter-spacing: 8px; padding: 20px; background: white; border-radius: 8px; margin: 20px 0; }
-            .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>College Guide</h1>
-            </div>
-            <div class="content">
-              <p>Hello,</p>
-              <p>${messages[type] || `Your verification code is:`}</p>
-              <div class="code">${code}</div>
-              <p>This code will expire in <strong>15 minutes</strong>.</p>
-              <p>If you didn't request this, please ignore this email.</p>
-            </div>
-            <div class="footer">
-              <p>© ${new Date().getFullYear()} College Guide. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f4f6;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #ffffff;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .header {
+      background: #002147;
+      padding: 25px;
+      text-align: center;
+      color: #FDC800;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .content {
+      padding: 30px;
+      color: #111827;
+    }
+    .code {
+      font-size: 32px;
+      font-weight: bold;
+      letter-spacing: 6px;
+      text-align: center;
+      margin: 25px 0;
+      color: #002147;
+    }
+    .footer {
+      font-size: 12px;
+      text-align: center;
+      color: #6b7280;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">College Guide</div>
+    <div class="content">
+      <p>Hello,</p>
+      <p>${messages[type]}</p>
+      <div class="code">${code}</div>
+      <p>This code will expire in <strong>15 minutes</strong>.</p>
+      <p>If you did not request this, please ignore this email.</p>
+    </div>
+    <div class="footer">
+      © ${new Date().getFullYear()} College Guide. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
+`,
   });
 };
 
-/**
- * Send welcome email after registration
- */
+// ===============================
+// Send Welcome Email
+// ===============================
 const sendWelcomeEmail = async (email, name) => {
   return sendEmail({
     to: email,
-    subject: 'Welcome to College Guide!',
-    text: `Welcome ${name}! Your account has been created successfully. Start exploring your courses and schedule today.`,
+    subject: 'Welcome to College Guide 🎓',
+    text: `Welcome ${name}! Your account has been created successfully.`,
     html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-            .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-            .header { background: linear-gradient(135deg, #002147, #003A5D); padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
-            .header h1 { color: #FDC800; margin: 0; font-size: 24px; }
-            .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 12px 12px; }
-            .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Welcome to College Guide!</h1>
-            </div>
-            <div class="content">
-              <p>Hi ${name},</p>
-              <p>Your account has been successfully created. You're now ready to:</p>
-              <ul>
-                <li>📚 Browse and enroll in courses</li>
-                <li>📅 Manage your schedule</li>
-                <li>📝 Track assignments and exams</li>
-                <li>🔔 Get real-time notifications</li>
-              </ul>
-              <p>Get started by logging in to the app!</p>
-            </div>
-            <div class="footer">
-              <p>© ${new Date().getFullYear()} College Guide. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+</head>
+<body style="font-family: Arial; background:#f3f4f6; padding:20px;">
+  <div style="max-width:600px; background:#fff; margin:auto; padding:30px; border-radius:10px;">
+    <h2 style="color:#002147;">Welcome ${name} 🎉</h2>
+    <p>Your account has been created successfully.</p>
+    <ul>
+      <li>📚 Browse courses</li>
+      <li>📅 Manage your schedule</li>
+      <li>📝 Track assignments</li>
+      <li>🔔 Get notifications</li>
+    </ul>
+    <p>We’re happy to have you with us!</p>
+    <p style="font-size:12px;color:#6b7280;">
+      © ${new Date().getFullYear()} College Guide
+    </p>
+  </div>
+</body>
+</html>
+`,
   });
 };
 
 module.exports = {
   sendEmail,
   sendVerificationEmail,
-  sendWelcomeEmail
+  sendWelcomeEmail,
 };

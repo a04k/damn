@@ -83,7 +83,7 @@ class CustomBottomNavigation extends ConsumerWidget {
           // Determine label for Tasks tab based on user type
           String label = tab['label'];
           if (tab['route'] == '/tasks' && isDoctor) {
-            label = 'Notifyme';
+            label = 'Notes';
           }
 
           return GestureDetector(

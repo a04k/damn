@@ -157,7 +157,7 @@ class Course {
               (e) => e.name == json['enrollmentStatus'],
               orElse: () => EnrollmentStatus.available)
           : EnrollmentStatus.available,
-      stats: json['stats'],
+      stats: json['stats'] ?? (json['enrollmentCount'] != null ? {'students': json['enrollmentCount']} : null),
       isPrimary: json['isPrimary'] == true,
     );
   }

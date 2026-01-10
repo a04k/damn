@@ -127,44 +127,48 @@ class _ExamGradingScreenState extends State<ExamGradingScreen> {
           ),
           
           // Footer
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                )
-              ]
-            ),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _feedbackController,
-                  decoration: const InputDecoration(
-                    labelText: 'Overall Feedback',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isSaving ? null : _saveGrade,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E6AFF), 
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16)
+          SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  )
+                ]
+              ),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _feedbackController,
+                    decoration: const InputDecoration(
+                      labelText: 'Overall Feedback',
+                      border: OutlineInputBorder(),
                     ),
-                    child: _isSaving 
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
-                      : const Text('Save Grade'),
+                    maxLines: 2,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _saveGrade,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2E6AFF), 
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16)
+                      ),
+                      child: _isSaving 
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
+                        : const Text('Save Grade'),
+                    ),
+                  ),
+                  const SizedBox(height: 20), // Extra spacing for comfort
+                ],
+              ),
             ),
           )
         ],

@@ -621,6 +621,7 @@ class _TaskItem extends StatelessWidget {
           builder: (context) => AssignmentDetailScreen(task: task),
         ),
       );
+    } else if (task.taskType == TaskType.exam) {
       // Check if already submitted
       if (task.status == TaskStatus.completed || task.status == TaskStatus.graded) {
          String submittedMessage = 'You have already submitted this exam.';

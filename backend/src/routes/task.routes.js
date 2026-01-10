@@ -22,8 +22,7 @@ router.get('/',
       // Build where clause
       const where = {
         OR: [
-
-          // Tasks from enrolled courses
+          // Tasks from enrolled courses (for students)
           {
             course: {
               enrollments: {
@@ -31,8 +30,11 @@ router.get('/',
               }
             }
           },
-          // Tasks created by user (Personal or Professor Assignments)
-          { createdById: req.user.id }
+          // Personal tasks created by user (exclude course exams/assignments - those are for students, not for the professor who created them)
+          {
+            createdById: req.user.id,
+            taskType: 'PERSONAL'  // Only personal tasks, not course-related ones
+          }
         ],
         ...(status && { status }),
         ...(type && { taskType: type }),
@@ -106,7 +108,7 @@ router.get('/pending',
         where: {
           status: { in: ['PENDING', 'IN_PROGRESS'] },
           OR: [
-
+            // Tasks from enrolled courses
             {
               course: {
                 enrollments: {
@@ -114,7 +116,11 @@ router.get('/pending',
                 }
               }
             },
-            { createdById: req.user.id }
+            // Only personal tasks created by user
+            {
+              createdById: req.user.id,
+              taskType: 'PERSONAL'
+            }
           ]
         },
         include: {
@@ -254,8 +260,8 @@ router.put('/:id',
       }
 
       // Only allow editing own tasks or if admin/professor
-      const canEdit = task.createdById === req.user.id || 
-                      req.user.role === 'ADMIN';
+      const canEdit = task.createdById === req.user.id ||
+        req.user.role === 'ADMIN';
 
       if (!canEdit) {
         throw new ApiError(403, 'Cannot edit this task');
@@ -267,7 +273,7 @@ router.put('/:id',
           ...(title && { title }),
           ...(description !== undefined && { description }),
           ...(priority && { priority }),
-          ...(status && { 
+          ...(status && {
             status,
             ...(status === 'COMPLETED' && { completedAt: new Date() })
           }),
@@ -475,7 +481,7 @@ router.get('/:id/submissions',
 
       // Check access (only professor/admin or course instructor)
       if (req.user.role === 'STUDENT') {
-        throw new ApiError(403, 'Access denied'); 
+        throw new ApiError(403, 'Access denied');
       }
 
       const submissions = await prisma.taskSubmission.findMany({
@@ -569,7 +575,7 @@ router.delete('/:id',
 
       // Only allow deleting own personal tasks or if admin
       const canDelete = (task.createdById === req.user.id && task.taskType === 'PERSONAL') ||
-                        req.user.role === 'ADMIN';
+        req.user.role === 'ADMIN';
 
       if (!canDelete) {
         throw new ApiError(403, 'Cannot delete this task');

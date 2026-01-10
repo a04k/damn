@@ -141,14 +141,61 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           return;
         }
 
-        setState(() {
-          _avatarUrl = image.path;
-        });
+        // Show loading indicator
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                  SizedBox(width: 12),
+                  Text('Uploading profile picture...'),
+                ],
+              ),
+              duration: Duration(seconds: 30),
+            ),
+          );
+        }
+
+        // Upload to backend (R2 storage)
+        final imageBytes = await image.readAsBytes();
+        final uploadedUrl = await DataService.uploadFile(imageBytes, image.name, type: 'profile');
+        
+        // Dismiss loading snackbar
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        }
+
+        if (uploadedUrl != null) {
+          // Append timestamp to force cache refresh if the URL is reused
+          final uniqueUrl = '$uploadedUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+          setState(() {
+            _avatarUrl = uniqueUrl;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile picture uploaded!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to upload profile picture'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }

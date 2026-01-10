@@ -15,29 +15,47 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    ImageProvider? imageProvider;
-    
-    if (avatarUrl != null && (avatarUrl!.startsWith('http') || avatarUrl!.startsWith('blob:') || avatarUrl!.startsWith('data:'))) {
-      imageProvider = CachedNetworkImageProvider(avatarUrl!);
-    } else if (avatarUrl != null && avatarUrl!.isNotEmpty) {
-      // For local files on mobile/desktop, or other paths
-      imageProvider = NetworkImage(avatarUrl!);
-    }
-
-    return CircleAvatar(
+    // Build fallback widget (initial letter)
+    Widget fallbackWidget = CircleAvatar(
       radius: size / 2,
-      backgroundColor: Colors.grey.shade300,
-      backgroundImage: imageProvider,
-      child: imageProvider == null
-          ? Text(
-              name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: TextStyle(
-                fontSize: size / 2,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
-              ),
-            )
-          : null,
+      backgroundColor: const Color(0xFF002147).withOpacity(0.1),
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '?',
+        style: TextStyle(
+          fontSize: size / 2.2,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF002147),
+        ),
+      ),
     );
+    
+    // Check if we have a valid URL
+    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(size / 2),
+        child: CachedNetworkImage(
+          imageUrl: avatarUrl!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => CircleAvatar(
+            radius: size / 2,
+            backgroundColor: Colors.grey.shade200,
+            child: SizedBox(
+              width: size / 3,
+              height: size / 3,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: const Color(0xFF002147).withOpacity(0.5),
+              ),
+            ),
+          ),
+          errorWidget: (context, url, error) => fallbackWidget,
+        ),
+      );
+    }
+    
+    // Return fallback for invalid/missing URLs
+    return fallbackWidget;
   }
 }

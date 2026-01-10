@@ -16,14 +16,8 @@ import '../models/course.dart';
 
 enum ContentType {
   assignment,
-  exam,
   lectureMaterial,
   announcement,
-}
-
-enum ExamType {
-  online,
-  offline,
 }
 
 // ---- SCREEN -----------------------------------------------------------------
@@ -39,20 +33,17 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
   // Content types + icons (for the chips)
   final Map<ContentType, String> _contentTypeLabels = {
     ContentType.assignment: 'Assignment',
-    ContentType.exam: 'Exam',
     ContentType.lectureMaterial: 'Lecture Material',
     ContentType.announcement: 'Announcement',
   };
 
   final Map<ContentType, IconData> _contentTypeIcons = {
     ContentType.assignment: Icons.assignment_outlined,
-    ContentType.exam: Icons.fact_check_outlined,
     ContentType.lectureMaterial: Icons.menu_book_outlined,
     ContentType.announcement: Icons.campaign_outlined,
   };
 
   ContentType _selectedType = ContentType.assignment;
-  ExamType _selectedExamType = ExamType.online;
 
   // Courses
   List<Course> _courses = [];
@@ -69,25 +60,16 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _pointsController = TextEditingController(text: '100');
-  final TextEditingController _durationController = TextEditingController();
 
   DateTime? _dueDate;
   TimeOfDay? _dueTime;
-  TimeOfDay? _startTime;
-  TimeOfDay? _endTime;
   
   // File attachments
   List<String> _uploadedFiles = [];
   bool _isUploading = false;
 
   // When true we show "Deadline & Grading" section
-  bool get _showDeadlineSection =>
-      _selectedType == ContentType.assignment ||
-      _selectedType == ContentType.exam;
-
-  bool get _isExam => _selectedType == ContentType.exam;
-  bool get _isOnlineExam => _isExam && _selectedExamType == ExamType.online;
-  bool get _isAssignment => _selectedType == ContentType.assignment;
+  bool get _showDeadlineSection => _selectedType == ContentType.assignment;
 
   @override
   void initState() {
@@ -100,7 +82,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _pointsController.dispose();
-    _durationController.dispose();
     super.dispose();
   }
 
@@ -256,26 +237,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
     }
   }
 
-  Future<void> _pickStartTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _startTime ?? TimeOfDay.now(),
-    );
-    if (picked != null) {
-      setState(() => _startTime = picked);
-    }
-  }
-
-  Future<void> _pickEndTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _endTime ?? TimeOfDay.now(),
-    );
-    if (picked != null) {
-      setState(() => _endTime = picked);
-    }
-  }
-
   Future<void> _pickAndUploadFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.any);
@@ -383,16 +344,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
             attachments: _uploadedFiles,
           );
           break;
-        case ContentType.exam:
-          success = await DataService.createExam(
-            courseId: _selectedCourseId!,
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim(),
-            examDate: finalDateTime!,
-            maxPoints: int.tryParse(_pointsController.text) ?? 100,
-            attachments: _uploadedFiles,
-          );
-          break;
         case ContentType.announcement:
           success = await DataService.createAnnouncement(
             title: _titleController.text.trim(),
@@ -426,11 +377,8 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
       _titleController.clear();
       _descriptionController.clear();
       _pointsController.text = '100';
-      _durationController.clear();
       _dueDate = null;
       _dueTime = null;
-      _startTime = null;
-      _endTime = null;
       _uploadedFiles.clear();
     });
   }
@@ -537,17 +485,13 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
                                   const SizedBox(height: 16),
                                   _buildContentTypeSection(),
                                   const SizedBox(height: 16),
-                                  if (_isExam) ...[
-                                    _buildExamTypeSection(),
-                                    const SizedBox(height: 16),
-                                  ],
                                   _buildDetailsSection(),
                                   const SizedBox(height: 16),
                                   if (_showDeadlineSection) ...[
                                     _buildDeadlineSection(),
                                     const SizedBox(height: 16),
                                   ],
-                                  if ((!_isExam && _selectedType != ContentType.announcement) || _isOnlineExam) ...[
+                                  if (_selectedType != ContentType.announcement) ...[
                                     _buildAttachmentSection(),
                                     const SizedBox(height: 16),
                                   ],
@@ -713,72 +657,6 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
     );
   }
 
-  Widget _buildExamTypeSection() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: _whiteCardDecoration,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Select Exam Type',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _buildTypeChip(
-                'Online',
-                Icons.computer,
-                _selectedExamType == ExamType.online,
-                () => setState(() => _selectedExamType = ExamType.online),
-              ),
-              const SizedBox(width: 8),
-              _buildTypeChip(
-                'Offline',
-                Icons.location_on_outlined,
-                _selectedExamType == ExamType.offline,
-                () => setState(() => _selectedExamType = ExamType.offline),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTypeChip(String label, IconData icon, bool selected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFFE7E5FF) : const Color(0xFFF5F6FF),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? const Color(0xFF7A6CF5) : Colors.grey.shade300,
-            width: selected ? 1.6 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: selected ? const Color(0xFF7A6CF5) : Colors.grey.shade700),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? Colors.black : Colors.black87,
-                fontSize: 13,
-                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildDetailsSection() {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -891,37 +769,7 @@ class _AddContentScreenState extends ConsumerState<AddContentScreen> {
           ],
 
           const SizedBox(height: 16),
-          if (_isOnlineExam) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTimePicker('Start Time', _dueTime, _pickDueTime),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _durationController,
-                    keyboardType: TextInputType.number,
-                    decoration: _roundedFieldDecoration.copyWith(
-                      labelText: 'Duration (Min)',
-                      hintText: 'e.g., 60',
-                      prefixIcon: const Icon(Icons.timer_outlined, color: Color(0xFF7A6CF5), size: 20),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ] else if (_isAssignment) ...[
-            Row(
-              children: [
-                Expanded(child: _buildTimePicker('Start Time', _startTime, _pickStartTime)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildTimePicker('End Time', _endTime, _pickEndTime)),
-              ],
-            ),
-          ] else ...[
-            _buildTimePicker('Time', _dueTime, _pickDueTime),
-          ],
+          _buildTimePicker('Due Time', _dueTime, _pickDueTime),
           const SizedBox(height: 12),
           TextFormField(
             controller: _pointsController,

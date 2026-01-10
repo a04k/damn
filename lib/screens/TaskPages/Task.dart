@@ -6,16 +6,30 @@ import 'Taskdetails.dart';
 import '../assignment_detail_screen.dart';
 import '../exam_runner_screen.dart';
 import '../../providers/task_provider.dart';
+import '../../providers/app_mode_provider.dart';
 import '../../models/task.dart';
+import '../../models/user.dart';
 
 class TasksPage extends ConsumerWidget {
   const TasksPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Check if professor mode
+    final appMode = ref.watch(appModeControllerProvider);
+    final isProfessor = appMode == AppMode.professor;
+    final pageTitle = isProfessor ? 'Notes' : 'Tasks';
+    
     // Use direct provider (not async) for instant updates
     final taskState = ref.watch(taskStateProvider);
-    final tasks = taskState.tasks;
+    final tasks = List<Task>.from(taskState.tasks);
+    // Sort by nearest deadline (tasks with due dates first)
+    tasks.sort((a, b) {
+      if (a.dueDate == null && b.dueDate == null) return 0;
+      if (a.dueDate == null) return 1;
+      if (b.dueDate == null) return -1;
+      return a.dueDate!.compareTo(b.dueDate!);
+    });
     final isLoading = taskState.isLoading;
     final error = taskState.error;
 
@@ -32,7 +46,7 @@ class TasksPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: const Text('Tasks'),
+        title: Text(pageTitle),
         backgroundColor: const Color(0xFF002147),
         foregroundColor: Colors.white,
         leading: IconButton(
@@ -112,14 +126,14 @@ class TasksPage extends ConsumerWidget {
               
               const SizedBox(height: 24),
               
-              // Add New Task Button
+              // Add New Task/Note Button
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
                   onPressed: () => _addTask(context, ref),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add New Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  label: Text(isProfessor ? 'Add New Note' : 'Add New Task', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF002147),
                     foregroundColor: Colors.white,
@@ -131,15 +145,15 @@ class TasksPage extends ConsumerWidget {
               
               const SizedBox(height: 32),
               
-              // Pending Tasks Section
-              const Text(
-                'Pending Tasks',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+              // Pending Section
+              Text(
+                isProfessor ? 'Pending Notes' : 'Pending Tasks',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
               ),
               const SizedBox(height: 12),
               
               if (pendingPersonal.isEmpty && pendingCourse.isEmpty)
-                _buildEmptyState('No pending tasks')
+                _buildEmptyState(isProfessor ? 'No pending notes' : 'No pending tasks')
               else ...[
                 ...pendingCourse.map((task) => _TaskCard(
                   key: ValueKey(task.id),
@@ -161,15 +175,15 @@ class TasksPage extends ConsumerWidget {
               
               const SizedBox(height: 32),
               
-              // Completed Tasks Section
-              const Text(
-                'Completed Tasks',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+              // Completed Section
+              Text(
+                isProfessor ? 'Completed Notes' : 'Completed Tasks',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
               ),
               const SizedBox(height: 12),
               
               if (completedPersonal.isEmpty && completedCourse.isEmpty)
-                _buildEmptyState('No completed tasks')
+                _buildEmptyState(isProfessor ? 'No completed notes' : 'No completed tasks')
               else ...[
                 ...completedCourse.map((task) => _TaskCard(
                   key: ValueKey(task.id),
@@ -291,7 +305,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _TaskCard extends StatelessWidget {
+class _TaskCard extends ConsumerWidget {
   final Task task;
   final bool isPersonal;
   final VoidCallback onToggle;
@@ -308,7 +322,7 @@ class _TaskCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isCompleted = task.status == TaskStatus.completed || task.status == TaskStatus.submitted || task.status == TaskStatus.graded;
     final typeColor = _getTypeColor(task.taskType);
 
@@ -326,12 +340,13 @@ class _TaskCard extends StatelessWidget {
           child: Checkbox(
             value: isCompleted,
             onChanged: (val) {
-              // If unchecking a completed assignment that was submitted
+              // Prevent unchecking submitted/completed assignments or exams
               if (val == false && 
-                  task.taskType == TaskType.assignment && 
-                  task.status == TaskStatus.submitted) {
-                 // Prompt to unsubmit
-                 _showUnsubmitDialog(context);
+                  (task.taskType == TaskType.assignment || task.taskType == TaskType.exam) && 
+                  (task.status == TaskStatus.submitted || task.status == TaskStatus.graded || task.status == TaskStatus.completed)) {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Marking cannot be removed from submitted tasks.')),
+                 );
                  return;
               }
 
@@ -363,20 +378,21 @@ class _TaskCard extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => AssignmentDetailScreen(task: task)),
-            );
+            ).then((_) => ref.read(taskStateProvider.notifier).fetchTasks(force: true));
           } else if (task.taskType == TaskType.exam) {
-            if (task.status == TaskStatus.submitted || task.status == TaskStatus.graded) {
+            if (task.status == TaskStatus.submitted || task.status == TaskStatus.graded || task.status == TaskStatus.completed) {
                ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('You have already submitted this exam.')),
                );
             } else {
-               Navigator.push(
-                context,
+               Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(builder: (context) => ExamRunnerScreen(
                   taskId: task.id, 
-                  courseId: task.courseId ?? '', // Handle pending backend support or null
+                  courseId: task.courseId ?? '', 
                 )),
-              );
+              ).then((_) {
+                 ref.read(taskStateProvider.notifier).fetchTasks(force: true);
+              });
             }
           } else {
             if (isPersonal && onEdit != null) {
@@ -385,7 +401,7 @@ class _TaskCard extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => TaskDetailsPage(task: task)),
-              );
+              ).then((_) => ref.read(taskStateProvider.notifier).fetchTasks(force: true));
             }
           }
         },
